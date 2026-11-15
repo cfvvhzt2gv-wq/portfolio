@@ -8,7 +8,7 @@ const harness = `<!doctype html><meta charset=utf-8><script src="js/leitor.js"><
   window.picoDb = (l) => { const e = new Float32Array(Portfolio.Leitor.JANELA), d = new Float32Array(e.length); l.amostras(e, d);
     let m = 0; for (let i = e.length - 17640; i < e.length; i++) m = Math.max(m, Math.abs(e[i]), Math.abs(d[i])); return 20 * Math.log10(m); };
 </script>`;
-const ficheiros = { '/harness.html': harness, '/audio/a.mp3': wav({ segundos: 6, db: -20 }), '/audio/b.mp3': wav({ segundos: 6, db: -32 }) };
+const ficheiros = { '/harness.html': harness, '/audio/a.mp3': wav({ segundos: 6, db: -20 }), '/audio/b.mp3': wav({ segundos: 6, db: -32 }), '/audio/curto.mp3': wav({ segundos: 2, db: -32 }) };
 const noBrowser = (fn) => comPagina({ ficheiros, pagina: '/harness.html' }, (page) => page.evaluate(fn));
 
 test('toca, pausa, retoma e para', async () => {
@@ -93,4 +93,65 @@ test('sem análise (modo simples): toca, troca de versão e não mede', async ()
     return { aTocar: l.aTocar(), pos: l.posicao(), taxa: l.taxa, amostras: l.amostras(new Float32Array(Portfolio.Leitor.JANELA), new Float32Array(Portfolio.Leitor.JANELA)) };
   });
   assert.ok(r.aTocar); assert.ok(r.pos > 0.7); assert.equal(r.taxa, 0); assert.equal(r.amostras, false);
+});
+
+// Comportamentos que os testes acima não fixavam. O motor não expõe os seus <audio>, por isso o espião (corre na página, antes de criar
+// o motor) guarda cada elemento criado em window.__criados; comEspiao devolve também a lista de erros (consola e página) do comPagina.
+const espiarAudio = () => {
+  window.__criados = []; const Original = window.Audio;
+  window.Audio = function (...args) { const el = new Original(...args); window.__criados.push(el); return el; };
+};
+const comEspiao = (fn) => comPagina({ ficheiros, pagina: '/harness.html' }, async (page, { erros }) => {
+  await page.evaluate(espiarAudio);
+  return { r: await page.evaluate(fn), erros };
+});
+
+test('só uma faixa toca: os elementos descartados ficam parados, sem src e sem erros (Review Focus 2)', async () => {
+  const { r, erros } = await comEspiao(async () => {
+    const criados = window.__criados, l = Portfolio.Leitor.criar({ analise: true }); let falhas = 0; l.aoErro = () => falhas++;
+    await Promise.all([l.tocar({ url: 'audio/a.mp3' }), l.tocar({ url: 'audio/b.mp3' })]); await esperar(800);
+    return { n: criados.length, aTocar: criados.map((el) => !el.paused), temSrc: criados.map((el) => el.hasAttribute('src')), falhas, rej: window.__rej };
+  });
+  assert.deepEqual(r, { n: 2, aTocar: [false, true], temSrc: [false, true], falhas: 0, rej: 0 }); assert.deepEqual(erros, []);
+});
+test('o fim da versão inativa mais curta não termina a faixa', async () => {
+  const r = await noBrowser(async () => {
+    const l = Portfolio.Leitor.criar({ analise: true }); let fins = 0; l.aoFim = () => fins++;
+    await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/curto.mp3' }); await esperar(2400);
+    return { fins, aTocar: l.aTocar(), pos: l.posicao() };
+  });
+  assert.equal(r.fins, 0); assert.ok(r.aTocar); assert.ok(r.pos > 2, `${r.pos} não é > 2`);
+});
+test('parar liberta os ficheiros', async () => {
+  const { r } = await comEspiao(async () => {
+    const criados = window.__criados, l = Portfolio.Leitor.criar({ analise: true });
+    await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/b.mp3' }); await esperar(300); l.parar();
+    return { n: criados.length, parados: criados.map((el) => el.paused), temSrc: criados.map((el) => el.hasAttribute('src')), aTocar: l.aTocar() };
+  });
+  assert.deepEqual(r, { n: 2, parados: [true, true], temSrc: [false, false], aTocar: false });
+});
+test('o fim é limitado a 0,05 s antes do fim, nos dois elementos', async () => {
+  const { r } = await comEspiao(async () => {
+    const criados = window.__criados, l = Portfolio.Leitor.criar({ analise: true });
+    await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/b.mp3' }); l.pausar(); l.procurar(1e9); await esperar(300);
+    return criados.map((el) => el.currentTime);
+  });
+  assert.equal(r.length, 2); for (const t of r) perto(t, 5.95, 0.02);
+});
+test('trocar para uma versão que já terminou termina a faixa em ordem', async () => {
+  const r = await noBrowser(async () => {
+    const l = Portfolio.Leitor.criar({ analise: true }); let fins = 0, erros = 0; l.aoFim = () => fins++; l.aoErro = () => erros++;
+    await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/curto.mp3' }); await esperar(2400);
+    const previos = fins; l.trocarVersao('antes'); await esperar(300);
+    return { previos, fins, erros, aTocar: l.aTocar() };
+  });
+  assert.deepEqual(r, { previos: 0, fins: 1, erros: 0, aTocar: false });
+});
+test('voltar atrás e trocar para a versão mais curta que já terminou toca-a', async () => {
+  const r = await noBrowser(async () => {
+    const l = Portfolio.Leitor.criar({ analise: true });
+    await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/curto.mp3' }); await esperar(2400); l.procurar(0.5); l.trocarVersao('antes'); await esperar(600);
+    return { aTocar: l.aTocar(), versao: l.versao(), pico: picoDb(l) };
+  });
+  assert.deepEqual([r.aTocar, r.versao], [true, 'antes']); perto(r.pico, -32, 0.5);
 });

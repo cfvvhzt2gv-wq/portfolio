@@ -30,6 +30,7 @@
 
     const ativo = () => (emCurso ? emCurso.el[emCurso.ativa] : null);
     const elementos = () => (emCurso ? Object.values(emCurso.el) : []);
+    // resume() só rejeita (InvalidStateError) com o contexto fechado, e este contexto nunca se fecha: ignorar a rejeição é seguro.
     const acordar = () => { if (contexto) contexto.resume().catch(() => {}); };
 
     // Um pause() ou um load() depois do play() rejeita-o com AbortError: nunca é erro. Qualquer outra rejeição falha a geração g.
@@ -119,6 +120,11 @@
       if (!emCurso || nova === emCurso.ativa || !emCurso.el[nova]) return;
       const sai = ativo(), entra = emCurso.el[nova];
       if (Math.abs(entra.currentTime - sai.currentTime) > DESALINHAMENTO) entra.currentTime = sai.currentTime;
+      // Uma versão mais curta pode já ter acabado (o seu «ended» só conta quando está ativa): então a faixa termina em ordem, em vez de ficar
+      // presa em silêncio. Se apenas ficou parada (voltou-se atrás depois de acabar) e quem sai toca, arranca-se para a troca se ouvir.
+      // O fim vem primeiro: um play() num elemento que acabou recomeçaria do 0.
+      if (entra.ended) { terminar(); return; }
+      if (!sai.paused && entra.paused) arrancar(entra, geracao);
       if (analise) {
         const t = contexto.currentTime;
         for (const [v, alvo] of [[emCurso.ativa, 0], [nova, 1]]) {
