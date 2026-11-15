@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-14-portfolio-design.md` (aprovado). Referências visuais aprovadas: `docs/referencias/` (ver o `LEIA-ME.md`). O `leitor-prototipo.html` já tem o código de desenho e o CSS do painel; as tarefas 3 e 5 portam-no.
 
-**Desvio do spec (corrigido na Tarefa 1):** o §9 manda correr `node --test tests/`. No Node 22 esse comando falha (trata `tests/` como um ficheiro). Usa-se `node --test`, sem argumentos.
+**Desvio do spec (corrigido na Tarefa 1):** o §9 manda correr `node --test tests/`. No Node 22 esse comando falha (trata `tests/` como um ficheiro). Usa-se `node --test`, sem argumentos, e a suite completa corre com `--test-concurrency=1` (um ficheiro de cada vez), porque os testes de áudio medem tempos e não toleram vários Chromium em paralelo.
 
 ## Global Constraints
 
@@ -35,8 +35,8 @@
 - Antes/Depois: começa em «Depois»; troca em 30 ms, no mesmo ponto.
 - Modo simples quando o protocolo é `file:`, não há Web Audio, ou é iOS sem `navigator.audioSession` (iOS < 16.4).
 - A automação publica só `index.html estilo.css conteudo.js js/ audio/ fontes/`. Cada MP3 abaixo de 100 MB.
-- Testes: `node --test` (nunca `node --test tests/`); ficheiros `tests/*.test.cjs`; Chromium com `--autoplay-policy=no-user-gesture-required`.
-- Commits com assunto em inglês (`feat:`, `test:`, `docs:`), corpo terminado pelas linhas de atribuição que a sessão exigir. Depois de cada commit: `git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq`.
+- Testes: `node --test` (nunca `node --test tests/`); a suite completa corre com `node --test --test-concurrency=1`; ficheiros `tests/*.test.cjs`; Chromium com `--autoplay-policy=no-user-gesture-required`.
+- Commits com assunto em inglês (`feat:`, `test:`, `docs:`), corpo terminado pelas linhas de atribuição que a sessão exigir. O implementador só faz commit; o push (`git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq`) é do controlador, depois da revisão de cada tarefa.
 
 ## Review Focus
 
@@ -64,7 +64,7 @@ docs/referencias/             já commitado com este plano
 - `tests/apoio/servidor.cjs`: `iniciarServidor({ conteudo?: string, ficheiros?: { [caminho: string]: Buffer | string } }) → Promise<{ url: string, fechar(): Promise<void> }>`. Serve os ficheiros reais da raiz do repositório (sem sair dela); `/conteudo.js` vem da opção `conteudo` quando existe; `ficheiros` (chaves como `/audio/a.mp3`) têm prioridade. Suporta pedidos `Range` (resposta 206) e `.mp3` vindo de `ficheiros` é enviado como `audio/wav`. Tudo o resto: 404.
 - `tests/apoio/navegador.cjs`: `comPagina(opcoes, fn) → Promise<T>` (devolve o que `fn` devolver), com `opcoes = { conteudo?: string, ficheiros?: object, pagina = '/index.html', ficheiro?: string, largura = 1280, altura = 900, movimentoReduzido = false }`. Abre Chromium, corre `fn(page, { url, erros, externos, pedidos })` e fecha no `finally`. `ficheiro` é um caminho absoluto aberto por `file://` (sem servidor). `erros`: `pageerror` e `console.error`, exceto os que começam por «Failed to load resource»; `externos`: pedidos `http(s)` para fora do servidor de teste; `pedidos`: URL de todos os pedidos feitos até ao momento (o array vai crescendo).
 - `tests/apoio/conteudo.cjs`: `base() → objeto` com nome «Ana Teste», local «Lisboa, Portugal», e-mail `ana@exemplo.pt`, uma rede, «Sobre» com 2 DAWs, 1 formação e 2 técnicas, e uma faixa por categoria (`audio/i1.mp3`; mistura com `audio/m1-antes.mp3` e `audio/m1-depois.mp3`; `audio/c1.mp3`); `comoJs(objeto) → string` (`window.CONTEUDO = …;`).
-- `tests/apoio/sinal.cjs`: `wav({ segundos = 6, db = -20, esqDb = db, dirDb = db, inverterDir = false, taxa = 44100 }) → Buffer` (seno de 1 kHz, PCM 16 bits estéreo; `null` num canal = silêncio); `onda({ segundos = 6, db = -20 }) → string` (JSON `{"duracao", "picos"}` com 800 picos iguais); `faixasTeste({ semOnda = false }) → { [caminho]: Buffer | string }` com os quatro MP3 de `base()` (6 s; o «antes» a −32 dB, os outros a −20 dB) e os respetivos `.onda.json` com o mesmo nível.
+- `tests/apoio/sinal.cjs` (a Tarefa 4 cria `wav`; a Tarefa 5 acrescenta `onda` e `faixasTeste`): `wav({ segundos = 6, db = -20, esqDb = db, dirDb = db, inverterDir = false, taxa = 44100 }) → Buffer` (seno de 1 kHz, PCM 16 bits estéreo; `null` num canal = silêncio); `onda({ segundos = 6, db = -20 }) → string` (JSON `{"duracao", "picos"}` com 800 picos iguais); `faixasTeste({ semOnda = false }) → { [caminho]: Buffer | string }` com os quatro MP3 de `base()` (6 s; o «antes» a −32 dB, os outros a −20 dB) e os respetivos `.onda.json` com o mesmo nível.
 
 ---
 
@@ -73,7 +73,7 @@ docs/referencias/             já commitado com este plano
 **Files:**
 - Create: `js/analise.js`
 - Test: `tests/analise.test.cjs`
-- Modify: `docs/superpowers/specs/2026-11-14-portfolio-design.md` (§9, primeira linha: `node --test tests/` → `node --test`)
+- Modify: `docs/superpowers/specs/2026-11-14-portfolio-design.md` (§9, primeira linha: `node --test tests/` → `node --test --test-concurrency=1`)
 
 **Interfaces:**
 - Consumes: nada.
@@ -83,7 +83,7 @@ docs/referencias/             já commitado com este plano
   criarMedidor(taxa: number): Medidor
     Medidor.atualizar(esq: Float32Array, dir: Float32Array, agora: number): Leituras
         // amostras mais recentes no fim; `agora` em segundos, crescente
-    Medidor.reiniciarPico(): void
+    Medidor.reiniciarPico(): void                  // apaga o pico; a partir da atualizar() seguinte só contam as amostras posteriores a agora + 0,05 s
     Leituras = { nivel: number, marcaNivel: number,                      // 0–1
                  picoDb: number|null, rmsDb: number|null, lufs: number|null, correlacao: number|null }
   novoEstadoEspectro(): { val: Float32Array(44), pico: Float32Array(44) }
@@ -125,13 +125,18 @@ test('a marca do nível fica 0,75 s e depois desce 0,36 por segundo', () => {
   perto(m.atualizar(mudo(), mudo(), 0.5).marcaNivel, alto, 1e-6);
   perto(m.atualizar(mudo(), mudo(), 1.5).marcaNivel, alto - 0.27, 0.01);
 });
-test('o pico guarda os últimos 3 s; reiniciarPico apaga-o', () => {
+test('o pico guarda os últimos 3 s', () => {
   const m = A.criarMedidor(44100), x = seno(-20), baixo = seno(-50);
   m.atualizar(x, x, 0);
   for (let i = 1; i <= 29; i++) perto(m.atualizar(baixo, baixo, i / 10).picoDb, -20, 0.1);   // até t = 2,9 s
   perto(m.atualizar(baixo, baixo, 3.0).picoDb, -50, 0.1);
-  const n = A.criarMedidor(44100); n.atualizar(x, x, 0); n.reiniciarPico();
-  perto(n.atualizar(baixo, baixo, 0.01).picoDb, -50, 0.1);        // o reinício força nova medição
+});
+test('reiniciarPico apaga o pico e só conta o que vem 50 ms depois do reinício', () => {
+  const m = A.criarMedidor(44100), x = seno(-20), baixo = seno(-50);
+  m.atualizar(x, x, 0); m.reiniciarPico();
+  assert.equal(m.atualizar(x, x, 0.01).picoDb, null);             // apagado; o som ainda é o anterior
+  assert.equal(m.atualizar(x, x, 0.05).picoDb, null);             // dentro da margem de 50 ms, sem nova leitura lenta
+  perto(m.atualizar(baixo, baixo, 0.2).picoDb, -50, 0.1);         // só entram os 0,14 s depois da margem
 });
 test('bandasEspectro: 44 bandas, 1 kHz cai na banda 24, queda e marca de pico', () => {
   const bins = new Float32Array(4096).fill(-120), e = A.novoEstadoEspectro();
@@ -159,7 +164,7 @@ Expected: FAIL (`Cannot find module '../js/analise.js'`).
 - [ ] **Step 3: Implement `js/analise.js`** com o invólucro das Global Constraints e a interface acima.
   - Janelas sobre as amostras mais recentes (no máximo as que existirem): nível 45 ms (potência média dos dois canais, `nivel = clamp((10·log10(pot) + 48) / 48, 0, 1)`), RMS e correlação 300 ms, LUFS 400 ms.
   - Leituras lentas (pico, RMS, LUFS, correlação) só recalculam quando `agora − última ≥ 0,1 − 1e-9`, ou na primeira chamada, ou logo a seguir a `reiniciarPico()`; entre recálculos devolvem o último valor. O nível e a marca atualizam sempre.
-  - Pico: máximo absoluto dos últimos 300 ms em dB; guarda-se o histórico dos 30 últimos e `picoDb` é o máximo desse histórico.
+  - Pico: máximo absoluto dos últimos 300 ms em dB; guarda-se o histórico dos 30 últimos e `picoDb` é o máximo desse histórico (`null` se estiver vazio). `reiniciarPico()` apaga o histórico e força a leitura lenta seguinte; nessa chamada (instante `a`) guarda-se `a` e, daí em diante, a janela de cada entrada é `min(300 ms, agora − (a + 0,05 s))`; sem amostras nessa janela não há entrada. A margem de 50 ms deixa passar a transição de 30 ms do Antes/Depois.
   - Marca do nível: sobe de imediato; fica 0,75 s; depois desce 0,36 por segundo a contar do fim da retenção (forma fechada, independente do espaçamento das chamadas), nunca abaixo do nível atual.
   - Silêncio: potência média < 1e-10, ou pico < 1e-5, ou um canal sem energia na correlação → `null`.
   - LUFS: aplicar a ponderação K ao array inteiro (aquecimento do filtro), medir os últimos 400 ms: `−0,691 + 10·log10(Σ potência de cada canal)`. Coeficientes (validados: seno de −20 dB dá −19,99 a 44,1 kHz e −19,99 a 48 kHz):
@@ -176,19 +181,18 @@ Expected: FAIL (`Cannot find module '../js/analise.js'`).
   - `bandasEspectro`: banda `i` cobre `[32·500^(i/44), 32·500^((i+1)/44))` Hz; máximo dos bins da banda (pelo menos um; largura de bin = `taxa / (2·dbBins.length)`); `v = clamp((dB + 4,5·log2(f_centro/1000) + 82) / 62, 0, 1)` com `f_centro = √(f0·f1)`; `val` sobe de imediato e desce no máximo 0,035 por chamada; `pico = max(pico − 0,012, val)`.
   - `formatarDb`: `null`, `NaN` e ±∞ → «—»; resultado que arredonda para zero sem sinal. `formatarTempo`: `m:ss` com os minutos sem limite (62:05); `null`/`NaN` → «—:—».
 
-- [ ] **Step 4: Fix the spec's test command** — editar a primeira linha do §9 do spec para `Correm com \`node --test\`.`
+- [ ] **Step 4: Fix the spec's test command** — editar a primeira linha do §9 do spec para `Correm com \`node --test --test-concurrency=1\` (um ficheiro de cada vez).`
 
 - [ ] **Step 5: Run to verify they pass**
 
 Run: `node --test tests/analise.test.cjs`
-Expected: PASS (10 testes).
+Expected: PASS (11 testes).
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add js/analise.js tests/analise.test.cjs docs/superpowers/specs/2026-11-14-portfolio-design.md
 git commit -m "feat: add sound measurements (level, peak, RMS, LUFS, correlation, spectrum)"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 
 ---
@@ -325,7 +329,7 @@ test('Review Focus 1: texto do conteúdo nunca vira HTML', () => {
 Run: `node --test tests/pagina.test.cjs`
 Expected: FAIL (módulos e ajudas em falta).
 
-- [ ] **Step 3: Create the test helpers** `tests/apoio/servidor.cjs`, `navegador.cjs`, `conteudo.cjs` segundo os contratos da secção «Ajudas de teste». (`sinal.cjs` fica para a Tarefa 3.)
+- [ ] **Step 3: Create the test helpers** `tests/apoio/servidor.cjs`, `navegador.cjs`, `conteudo.cjs` segundo os contratos da secção «Ajudas de teste». (`sinal.cjs` fica para as Tarefas 4 e 5.)
 
 - [ ] **Step 4: Fonts, `.gitignore`, `conteudo.js`**
   - Fontes: `npm pack @fontsource/instrument-serif@5.3.0 @fontsource/inter@5.3.0 @fontsource/ibm-plex-mono@5.3.0` numa pasta temporária; de cada pacote copiar `package/files/<família>-latin-<peso>-<estilo>.woff2` para `fontes/` com os nomes `instrument-serif-400.woff2`, `instrument-serif-400-italic.woff2`, `inter-400.woff2`, `inter-500.woff2`, `ibm-plex-mono-400.woff2`, `ibm-plex-mono-500.woff2`, e `package/LICENSE` para `fontes/LICENSE-<família>.txt`. O subconjunto `latin` cobre os acentos do português, «—», «−» e «·».
@@ -349,7 +353,6 @@ Expected: PASS (14 testes).
 ```bash
 git add index.html estilo.css conteudo.js js/pagina.js fontes .gitignore tests
 git commit -m "feat: add static page, content model and fonts"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 
 ---
@@ -357,7 +360,7 @@ git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ### Task 3: Desenho dos instrumentos (`js/instrumentos.js`)
 
 **Files:**
-- Create: `js/instrumentos.js`, `tests/apoio/sinal.cjs`
+- Create: `js/instrumentos.js`
 - Test: `tests/instrumentos.test.cjs`
 
 **Interfaces:**
@@ -372,7 +375,6 @@ git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
   criarEstereo(): EstadoEstereo
   desenharEstereo(tela: Tela, estado: EstadoEstereo, esq: Float32Array|null, dir: Float32Array|null, taxa: number): void   // null = só a moldura
   ```
-- Também cria `tests/apoio/sinal.cjs` (contrato nas «Ajudas de teste»).
 
 - [ ] **Step 1: Write the failing tests** — `tests/instrumentos.test.cjs`
 
@@ -438,24 +440,21 @@ test('estéreo sem amostras só desenha a moldura', async () => {
 Run: `node --test tests/instrumentos.test.cjs`
 Expected: FAIL (`Portfolio` não está definido; `js/instrumentos.js` não existe).
 
-- [ ] **Step 3: Create `tests/apoio/sinal.cjs`** (contrato nas «Ajudas de teste»).
-
-- [ ] **Step 4: Implement `js/instrumentos.js`** portando de `docs/referencias/leitor-prototipo.html` as funções `tela` (→ `criarTela`), `desenharOnda`, `desenharEspectro` e `desenharEstereo`, com estas alterações:
+- [ ] **Step 3: Implement `js/instrumentos.js`** portando de `docs/referencias/leitor-prototipo.html` as funções `tela` (→ `criarTela`), `desenharOnda`, `desenharEspectro` e `desenharEstereo`, com estas alterações:
   - Picos `0–255` (altura da barra `(v/255)^0,7 × (h − 4)`, mínimo 1 px); com `picos = null`, linha fina em vez de barras.
   - O estéreo recebe os arrays, usa `round(taxa × 0,02)` amostras (20 ms), ampliação 1,5× limitada ao losango (`|m| + |s| ≤ 1`) e não lê estado global; o rasto vive em `estado.rasto`, um canvas fora do ecrã do mesmo tamanho.
   - Cores lidas de `--ink`, `--muted`, `--line`, `--ghost`, `--bg` (`getComputedStyle(document.documentElement)`) com os valores do spec como alternativa; letra dos rótulos `400 10px "IBM Plex Mono", ui-monospace, monospace`.
 
-- [ ] **Step 5: Run to verify they pass**
+- [ ] **Step 4: Run to verify they pass**
 
 Run: `node --test tests/instrumentos.test.cjs`
 Expected: PASS (8 testes).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add js/instrumentos.js tests/apoio/sinal.cjs tests/instrumentos.test.cjs
+git add js/instrumentos.js tests/instrumentos.test.cjs
 git commit -m "feat: draw waveform, spectrum and stereo field on canvas"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 
 ---
@@ -463,17 +462,18 @@ git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ### Task 4: Motor de reprodução (`js/leitor.js`)
 
 **Files:**
-- Create: `js/leitor.js`
+- Create: `js/leitor.js`, `tests/apoio/sinal.cjs` (só `wav`)
 - Test: `tests/leitor.test.cjs`
 
 **Interfaces:**
-- Consumes: `tests/apoio/sinal.cjs` (`wav`), `comPagina`.
+- Consumes: `comPagina` (Tarefa 2). Produz também `tests/apoio/sinal.cjs`, só com `wav` (contrato nas «Ajudas de teste»).
 - Produces `Portfolio.Leitor`:
   ```
   JANELA = 32768, BINS = 4096                                  // tamanho dos arrays de amostras e de espectro
   criar({ analise: boolean }): Leitor
-    tocar(faixa: { url: string, urlAntes?: string|null }): Promise<boolean>
+    tocar(faixa: { url: string, urlAntes?: string|null }, versao: 'antes'|'depois' = 'depois'): Promise<boolean>
         // true se começou a tocar; false se outra chamada a substituiu ou se falhou (neste caso chama aoErro)
+        // versao 'antes' só vale com urlAntes; sem ele começa em 'depois'
     pausar(): void;  retomar(): Promise<void>;  parar(): void   // parar volta ao início e liberta os ficheiros
     procurar(seg: number): void                                 // limita a [0, duração − 0,05]
     trocarVersao(versao: 'antes'|'depois'): void
@@ -535,6 +535,13 @@ test('Antes/Depois: mantém a posição, continua a tocar e muda o nível', asyn
   assert.equal(r.inicial, 'depois'); assert.equal(r.versao, 'antes'); assert.ok(r.aTocar); assert.ok(Math.abs(r.p2 - r.p1) < 0.3);
   perto(r.depois, -20, 0.5); perto(r.antes, -32, 0.5); perto(r.volta, -20, 0.5);
 });
+test('tocar com a versão «antes» começa nessa versão', async () => {
+  const r = await noBrowser(async () => {
+    const l = Portfolio.Leitor.criar({ analise: true }); await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/b.mp3' }, 'antes'); await esperar(900);
+    return { versao: l.versao(), pico: picoDb(l) };
+  });
+  assert.equal(r.versao, 'antes'); perto(r.pico, -32, 0.5);
+});
 test('ficheiro inexistente: aoErro uma vez, tocar devolve false e o motor continua utilizável', async () => {
   const r = await noBrowser(async () => {
     const l = Portfolio.Leitor.criar({ analise: true }); let erros = 0; l.aoErro = () => erros++;
@@ -581,9 +588,9 @@ test('sem análise (modo simples): toca, troca de versão e não mede', async ()
 - [ ] **Step 2: Run to verify they fail**
 
 Run: `node --test tests/leitor.test.cjs`
-Expected: FAIL (`Portfolio.Leitor` não existe).
+Expected: FAIL (`tests/apoio/sinal.cjs` e `Portfolio.Leitor` ainda não existem).
 
-- [ ] **Step 3: Implement `js/leitor.js`**
+- [ ] **Step 3: Create `tests/apoio/sinal.cjs` (só `wav`) and implement `js/leitor.js`**
   - Um só `AudioContext`, criado no primeiro `tocar` (dentro do gesto do utilizador) com `resume()`. Antes de o criar: `try { navigator.audioSession.type = 'playback'; } catch {}` (som com o iPhone em silêncio, iOS ≥ 16.4).
   - Cada `tocar` cria `new Audio(url)` (`preload = 'auto'`) por versão, só duas se houver `urlAntes`; ambas arrancam juntas, a inativa com ganho 0 (modo simples: `muted = true`).
   - Com análise: cada elemento → `createMediaElementSource` → `GainNode` → `entrada` (`channelCount 2`, `'explicit'`, `'speakers'`) → destino; `entrada` → `ChannelSplitter(2)` → dois `AnalyserNode` com `fftSize = JANELA`; `entrada` → um `AnalyserNode` com `fftSize = 2 × BINS` e `smoothingTimeConstant = 0,72`.
@@ -591,18 +598,19 @@ Expected: FAIL (`Portfolio.Leitor` não existe).
   - Corridas: um contador de geração incrementa em cada `tocar`/`parar`; depois de qualquer `await` e em cada evento, ignorar o que pertence a uma geração antiga. `AbortError` de `play()` nunca é erro. Elementos descartados: `pause(); removeAttribute('src'); load()` e ignorar o `error` que daí resulte.
   - `aoErro` com o evento `error` de qualquer elemento da geração atual, ou `play()` rejeitado com outro nome que não `AbortError`; depois do erro o motor faz `parar()`. `aoFim` com o evento `ended` do elemento ativo, seguido de `parar()`.
   - `procurar` põe o mesmo `currentTime` nos dois elementos.
+  - `tocar(faixa, versao = 'depois')`: com `versao === 'antes'` e `urlAntes`, o elemento do «antes» começa já audível, sem passagem de ganhos; `versao()` devolve a versão ativa.
+  - `aoErro` dispara no máximo uma vez por geração (o evento `error` e a rejeição de `play()` podem chegar os dois).
 
 - [ ] **Step 4: Run to verify they pass**
 
 Run: `node --test tests/leitor.test.cjs`
-Expected: PASS (9 testes, cerca de 20 s).
+Expected: PASS (10 testes, cerca de 20 s).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add js/leitor.js tests/leitor.test.cjs
+git add js/leitor.js tests/apoio/sinal.cjs tests/leitor.test.cjs
 git commit -m "feat: add playback engine with analysis graph and Antes/Depois switching"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 
 ---
@@ -610,11 +618,11 @@ git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ### Task 5: Painel de instrumentos e interação
 
 **Files:**
-- Modify: `js/pagina.js`, `estilo.css`, `index.html` (scripts de `js/analise.js`, `js/instrumentos.js`, `js/leitor.js` antes de `js/pagina.js`)
+- Modify: `js/pagina.js`, `estilo.css`, `index.html` (scripts de `js/analise.js`, `js/instrumentos.js`, `js/leitor.js` antes de `js/pagina.js`), `tests/apoio/sinal.cjs` (acrescentar `onda` e `faixasTeste`)
 - Test: `tests/painel.test.cjs`, e novos testes em `tests/pagina.test.cjs`
 
 **Interfaces:**
-- Consumes: `Analise` (Tarefa 1), `Instrumentos` (Tarefa 3), `Leitor` (Tarefa 4), `Pagina.preparar/montar` e o contrato do DOM (Tarefa 2), `sinal.cjs`.
+- Consumes: `Analise` (Tarefa 1), `Instrumentos` (Tarefa 3), `Leitor` (Tarefa 4), `Pagina.preparar/montar` e o contrato do DOM (Tarefa 2), `sinal.cjs` (`wav`, da Tarefa 4).
 - Produces (em `Portfolio.Pagina`):
   ```
   decidirModo(amb: { protocolo: string, temWebAudio: boolean, ios: boolean, temAudioSession: boolean }): 'completo'|'simples'
@@ -695,6 +703,12 @@ test('Antes/Depois: mantém a posição, continua a tocar, muda o LUFS em 12 dB 
   assert.equal(await estado(page, M), 'a-tocar'); assert.ok(await pos(page, M) > p2 + 0.8);
   perto(num(await valor(page, M, 'lufs')), depois - 12, 1); perto(num(await valor(page, M, 'pico')), -32, 0.5);
 }));
+test('escolher «Antes» com a faixa parada: ao tocar, começa nessa versão', () => abrir({}, async (page) => {
+  await page.click(`${faixa(M)} [data-versao="antes"]`);
+  assert.equal(await estado(page, M), 'parada'); assert.equal(await page.getAttribute(`${faixa(M)} [data-versao="antes"]`, 'aria-pressed'), 'true');
+  await tocar(page, M, 1200);
+  assert.equal(await page.getAttribute(`${faixa(M)} [data-versao="antes"]`, 'aria-pressed'), 'true'); perto(num(await valor(page, M, 'pico')), -32, 0.5);
+}));
 test('clicar a meio da forma de onda põe a faixa a meio', () => abrir({}, async (page) => {
   await tocar(page, I, 400);
   const c = await page.locator(`${faixa(I)} .onda`).boundingBox(); await page.mouse.click(c.x + c.width / 2, c.y + c.height / 2); await page.waitForTimeout(100);
@@ -769,18 +783,20 @@ Run: `node --test tests/painel.test.cjs tests/pagina.test.cjs`
 Expected: FAIL (o painel e as funções novas não existem).
 
 - [ ] **Step 3: Implement in `js/pagina.js`** `decidirModo`, `validarOnda`, `ondaUrl` e a ligação do leitor em `iniciar`:
+  - Primeiro, acrescentar a `tests/apoio/sinal.cjs` as funções `onda` e `faixasTeste` (contrato nas «Ajudas de teste»).
   - Modo: `decidirModo` com `location.protocol`, `AudioContext`, deteção de iOS (`/iP(hone|ad|od)/` no `userAgent`, ou `MacIntel` com `maxTouchPoints > 1`) e `'audioSession' in navigator`. Em modo completo, pedir logo `ondaUrl(url)` e `ondaUrl(urlAntes)` de cada faixa, validar com `validarOnda` e, ao chegarem, escrever a duração no `.tempo` das faixas paradas (na mistura vale a do «Depois»). Em modo simples não se pedem.
   - Clique no play: faixa nova → `parar()` e fechar a ativa, `leitor.tocar(faixa)`, abrir o painel; ativa a tocar → `pausar` (`em-pausa`); ativa em pausa → `retomar`. `aoFim` fecha o painel e volta a `parada` com a duração no `.tempo`; `aoErro` põe `indisponivel`, «Indisponível» no `.tempo`, botão desativado e fecha o painel.
   - Painel: ao abrir, as leituras mostram «—» até haver som. O `.onda` mostra a forma de onda da versão escolhida (linha fina se não houver picos válidos ou em modo simples). Modo simples: o painel só tem o `.onda`. Movimento reduzido: sem as duas `figure.inst`, e a onda e as leituras atualizam 2 vezes por segundo.
   - Controlo de posição: `role=slider`, `aria-valuemin=0`, `aria-valuemax` e `aria-valuenow` em segundos (duas casas), `aria-valuetext` «0:42 / 3:15»; ponteiro (pausa durante o arrasto e retoma ao largar) e teclado (setas ±5 % da faixa, no mínimo 1 s; Home; End). `.tempo` da faixa ativa mostra «0:42 / 3:15» (duração da onda, ou a do áudio quando não há onda).
-  - Antes/Depois: ligar os botões; `aria-pressed`; com a faixa ativa chamar `trocarVersao`, trocar os picos da onda e `medidor.reiniciarPico()`; com a faixa parada só guarda a versão a tocar.
+  - Antes/Depois: ligar os botões; `aria-pressed`; com a faixa ativa chamar `trocarVersao`, trocar os picos da onda e `medidor.reiniciarPico()`; com a faixa parada só guarda a versão, e o `tocar` seguinte chama `leitor.tocar(faixa, versao)`.
   - Ciclo de desenho com `requestAnimationFrame` só enquanto toca: ler `leitor.amostras` e `leitor.espectro`, `medidor.atualizar(esq, dir, agora)`, `Analise.bandasEspectro`, desenhar, escrever as leituras só quando o texto muda (pico e RMS com « dB», LUFS sem unidade; a barra do Nível usa `nivel` e `marcaNivel`). Em pausa fica a última imagem. Um redesenho extra em pausa, ao procurar e em `resize`.
+  - Guardar a duração conhecida de cada faixa (da onda ou, quando não há, a do áudio) para a mostrar no `.tempo` quando a faixa volta a `parada`.
   - `estilo.css`: portar do protótipo `.painel`, `.onda`, `.instrumentos`, `.inst`, `.tela`, `.leituras`, `.nivel`; `.onda { height: 56px; touch-action: pan-y; cursor: pointer }`; play preenchido a preto em `a-tocar` e `em-pausa`; a 640 px ou menos o espectro e o campo estéreo ficam um por baixo do outro.
 
 - [ ] **Step 4: Run to verify they pass**
 
 Run: `node --test tests/painel.test.cjs tests/pagina.test.cjs`
-Expected: PASS (15 testes de painel, 16 de página, cerca de 60 s).
+Expected: PASS (16 testes de painel, 16 de página, cerca de 60 s).
 
 - [ ] **Step 5: Compare with the approved prototype** — abrir uma faixa a tocar com `base()` e `faixasTeste()`, capturar 1280 px e 390 px (no scratchpad) e comparar com `docs/referencias/leitor-prototipo.html` (opção 2 · Completa). Corrigir as diferenças.
 
@@ -789,7 +805,6 @@ Expected: PASS (15 testes de painel, 16 de página, cerca de 60 s).
 ```bash
 git add js/pagina.js estilo.css index.html tests
 git commit -m "feat: add instrument panel, seeking, Antes/Depois and simple mode"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 
 ---
@@ -863,7 +878,6 @@ Expected: PASS (8 testes).
 ```bash
 git add ferramentas/verificar-conteudo.mjs tests/verificar-conteudo.test.cjs
 git commit -m "feat: add content verification tool with Portuguese messages"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 
 ---
@@ -930,7 +944,6 @@ Expected: PASS (3 testes; os dois primeiros ficam «skipped» se não houver ffm
 ```bash
 git add ferramentas/gerar-ondas.mjs tests/gerar-ondas.test.cjs
 git commit -m "feat: add waveform generation tool using ffmpeg"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 
 ---
@@ -1016,7 +1029,7 @@ jobs:
 ```
   As versões das ações (`checkout@v4`, `setup-node@v4`, `configure-pages@v5`, `upload-pages-artifact@v3`, `deploy-pages@v4`) não puderam ser confirmadas daqui (o github.com não é acessível a partir desta sessão). Se a primeira execução avisar de versões antigas, subir a versão maior indicada no aviso.
 
-- [ ] **Step 4: Write `README.md`** (pt-PT, curto) com quatro secções: **Como acrescentar uma faixa** (copiar o MP3 para a pasta certa de `audio/`, juntar um bloco à lista em `conteudo.js`, na mistura indicar `antes` e `depois`); **Ver no computador** (duplo clique no `index.html` abre o modo simples; para o painel completo, `python3 -m http.server` na pasta e abrir `http://localhost:8000`; as formas de onda locais vêm de `node ferramentas/gerar-ondas.mjs`, precisa do ffmpeg); **Publicar** (juntar ao `main`; a automação corre sozinha; primeira vez: Settings → Pages → Source → **GitHub Actions**; endereço https://cfvvhzt2gv-wq.github.io/portfolio; se falhar, ler o erro no separador Actions); **Testes** (`node --test`; precisa de Playwright e, para as ferramentas, de ffmpeg).
+- [ ] **Step 4: Write `README.md`** (pt-PT, curto) com quatro secções: **Como acrescentar uma faixa** (copiar o MP3 para a pasta certa de `audio/`, juntar um bloco à lista em `conteudo.js`, na mistura indicar `antes` e `depois`); **Ver no computador** (duplo clique no `index.html` abre o modo simples; para o painel completo, `python3 -m http.server` na pasta e abrir `http://localhost:8000`; as formas de onda locais vêm de `node ferramentas/gerar-ondas.mjs`, precisa do ffmpeg); **Publicar** (juntar ao `main`; a automação corre sozinha; primeira vez: Settings → Pages → Source → **GitHub Actions**; endereço https://cfvvhzt2gv-wq.github.io/portfolio; se falhar, ler o erro no separador Actions); **Testes** (`node --test --test-concurrency=1`; precisa de Playwright e, para as ferramentas, de ffmpeg).
 
 - [ ] **Step 5: Validate the workflow and dry-run its steps**
 
@@ -1037,7 +1050,6 @@ git add README.md tests/publicacao.test.cjs
 git commit -m "docs: add README and publication checks"
 git add .github/workflows/publicar.yml
 git commit -m "feat: add GitHub Actions workflow to verify, prepare waveforms and publish"
-git -c push.negotiate=true push -u origin claude/quirky-johnson-w78lqq
 ```
 Se o push for recusado por causa de `.github/workflows` (falta a permissão `workflow`): não insistir. Guardar uma cópia do ficheiro fora do repositório (scratchpad) e correr `git reset --hard HEAD~1`, que só desfaz o commit local do workflow, ainda não enviado. Repetir o push e entregar o ficheiro ao Afonso para o criar no GitHub (Add file → Create new file, no ramo `claude/quirky-johnson-w78lqq`, caminho `.github/workflows/publicar.yml`). Depois, `git pull` e confirmar que o ficheiro é idêntico à cópia guardada.
 
@@ -1049,8 +1061,8 @@ Se o push for recusado por causa de `.github/workflows` (falta a permissão `wor
 
 - [ ] **Step 1: Run the whole suite**
 
-Run: `node --test`
-Expected: todos os testes passam (cerca de 70 s; os de ffmpeg passam ou ficam «skipped» com a razão dita).
+Run: `node --test --test-concurrency=1`
+Expected: todos os testes passam (75 testes, cerca de 3 min; os de ffmpeg passam ou ficam «skipped» com a razão dita).
 
 - [ ] **Step 2: Check the published subset end to end** — com o `_site` do dry-run da Tarefa 8, servir só essa pasta e abrir a página no Chromium com o conteúdo de teste: nenhuma resposta 404 exceto as de ficheiros que o teste não gerou, e uma faixa toca com o painel completo.
 
