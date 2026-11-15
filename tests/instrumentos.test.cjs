@@ -128,3 +128,24 @@ test('estéreo: o rasto fica alguns quadros, esmorece e some quando deixa de hav
   assert.equal(conta(await quadros(20, 'C, O, 44100'), 102, 106, 60, 75, forte), 0);
   assert.equal(conta(await quadros(1, 'null, null, 44100'), 0, 207, 0, 207, ponto), 0);   // sem amostras: só a moldura
 });
+test('estéreo: sem amostras apaga o rasto todo, também com devicePixelRatio abaixo de 1', async () => {
+  // zoom a 50 % num ecrã normal: o rasto guarda a transformação do quadro anterior (scale 0,5) e o `null` tem de o apagar por inteiro
+  // o `capturar` não serve: chama `ajustar()` antes de o corpo mudar o devicePixelRatio
+  const [antes, depois] = await comPagina({ ficheiros: { '/harness.html': html(208, 208) }, pagina: '/harness.html' }, (page) =>
+    page.evaluate(() => {
+      window.devicePixelRatio = 0.5;
+      const I = Portfolio.Instrumentos, t = I.criarTela(document.getElementById('c')), e = I.criarEstereo();
+      t.ajustar();
+      const C = Float32Array.from({ length: 882 }, (_, i) => 0.5 * Math.sin(i / 8)), O = C.map((v) => -v);
+      const pixeis = () => { const d = t.ctx.getImageData(0, 0, t.canvas.width, t.canvas.height); return { w: d.width, h: d.height, px: Array.from(d.data) }; };
+      for (let k = 0; k < 5; k++) I.desenharEstereo(t, e, C, O, 44100);       // oposição de fase: linha horizontal
+      for (let k = 0; k < 5; k++) I.desenharEstereo(t, e, C, C, 44100);       // ao centro: linha vertical
+      const antes = pixeis();
+      I.desenharEstereo(t, e, null, null, 44100);
+      return [antes, pixeis()];
+    }));
+  const fortes = (img) => conta(img, 0, img.w - 1, 0, img.h - 1, ponto);
+  assert.equal(antes.w, 104, 'o canvas devia ter 208 × 0,5 pixéis');
+  assert.ok(fortes(antes) > 20, 'sem rasto antes de apagar');
+  assert.equal(fortes(depois), 0);
+});

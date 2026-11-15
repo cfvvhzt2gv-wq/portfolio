@@ -154,7 +154,9 @@
     if (esq && dir) {
       atualizarRasto(estado.rasto, ctx.getTransform(), esq, dir, taxa, (e, d) => { const [s, m] = posicaoNoLosango(e, d); return [cx + s * r, cy - m * r]; }, c.ink);
     } else {
-      estado.rasto.getContext('2d').clearRect(0, 0, estado.rasto.width, estado.rasto.height);
+      // o rasto ficou com a transformação do último quadro (scale(dpr)): repõe-se antes de apagar, senão com dpr < 1 só se apagava parte dele
+      const tc = estado.rasto.getContext('2d');
+      tc.setTransform(1, 0, 0, 1, 0, 0); tc.clearRect(0, 0, estado.rasto.width, estado.rasto.height);
     }
     ctx.clearRect(0, 0, w, h);
     desenharMoldura(ctx, cx, cy, r, c);
