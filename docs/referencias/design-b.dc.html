@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>Opção B — Ficha técnica</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#111111}a:hover{color:#5C5C5C}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #FFFFFF; color: #111111; font-family: Inter, system-ui, sans-serif;">
+<div style="max-width: 1120px; margin: 0 auto; padding: 0 24px;">
+
+<header style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 20px 0;">
+<a href="#topo" style="padding: 8px 0; font-family: 'Instrument Serif', serif; font-size: 26px; text-decoration: none;">Afonso Duarte</a>
+<nav aria-label="Principal" style="display: flex; flex-wrap: wrap; gap: 0 28px; font-size: 14px;">
+<a href="#trabalhos" style="padding: 12px 0; text-decoration: none;">Trabalhos</a>
+<a href="#sobre" style="padding: 12px 0; text-decoration: none;">Sobre</a>
+<a href="#contacto" style="padding: 12px 0; text-decoration: none;">Contacto</a>
+</nav>
+</header>
+
+<section id="topo" style="padding: 72px 0 64px; border-bottom: 1px solid #111111;">
+<h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(64px, 11vw, 156px); line-height: 0.9; letter-spacing: -0.025em;">Produção<br><em style="font-style: italic;">musical</em></h1>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px; margin-top: 56px;">
+<p style="margin: 0; max-width: 480px; font-size: 18px; line-height: 1.55; color: #3D3D3D;">Instrumentais, mistura e masterização, áudio cinematográfico — por Afonso Duarte.</p>
+<p style="margin: 0; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #5C5C5C;">[Cidade, País]</p>
+</div>
+</section>
+
+<nav id="trabalhos" aria-label="Categorias" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); border-bottom: 1px solid #E3E3E3;">
+<a href="#instrumentais" style="display: flex; flex-direction: column; gap: 6px; padding: 28px 24px 28px 0; text-decoration: none;"><span style="font-size: 13px; color: #5C5C5C;">01</span><span style="font-family: 'Instrument Serif', serif; font-size: 34px; line-height: 1.1;">Instrumentais</span><span style="font-size: 13px; color: #5C5C5C;">[n] faixas</span></a>
+<a href="#mistura" style="display: flex; flex-direction: column; gap: 6px; padding: 28px 24px 28px 0; text-decoration: none;"><span style="font-size: 13px; color: #5C5C5C;">02</span><span style="font-family: 'Instrument Serif', serif; font-size: 34px; line-height: 1.1;">Mistura e masterização</span><span style="font-size: 13px; color: #5C5C5C;">[n] trabalhos</span></a>
+<a href="#cinematografico" style="display: flex; flex-direction: column; gap: 6px; padding: 28px 24px 28px 0; text-decoration: none;"><span style="font-size: 13px; color: #5C5C5C;">03</span><span style="font-family: 'Instrument Serif', serif; font-size: 34px; line-height: 1.1;">Áudio cinematográfico</span><span style="font-size: 13px; color: #5C5C5C;">[n] projetos</span></a>
+</nav>
+
+<section id="instrumentais" style="display: flex; flex-wrap: wrap; gap: 32px 40px; padding: 72px 0; border-bottom: 1px solid #E3E3E3;">
+<div style="flex: 1 1 240px; min-width: 0;">
+<p style="margin: 0; font-size: 13px; color: #5C5C5C;">01</p>
+<h2 style="margin: 8px 0 12px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 48px; line-height: 1.05;">Instrumentais</h2>
+<p style="margin: 0; max-width: 280px; font-size: 15px; line-height: 1.55; color: #5C5C5C;">[Uma frase sobre os teus instrumentais.]</p>
+</div>
+<div style="flex: 3 1 560px; min-width: 0;">
+<sc-for list="{{instrumentais}}" as="t" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 20px 0; border-top: 1px solid #E3E3E3;">
+<button type="button" aria-label="Ouvir {{t.title}}" style="flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #111111; background: {{t.btnBg}}; color: {{t.btnFg}}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"></path></svg></button>
+<div style="flex: 1 1 220px; min-width: 0;">
+<div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.15;">{{t.title}}</div>
+<div style="margin-top: 2px; font-size: 13px; color: #5C5C5C;">{{t.meta}}</div>
+</div>
+<span style="font-size: 13px; color: #5C5C5C; font-variant-numeric: tabular-nums;">—:—</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section id="mistura" style="display: flex; flex-wrap: wrap; gap: 32px 40px; padding: 72px 0; border-bottom: 1px solid #E3E3E3;">
+<div style="flex: 1 1 240px; min-width: 0;">
+<p style="margin: 0; font-size: 13px; color: #5C5C5C;">02</p>
+<h2 style="margin: 8px 0 12px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 48px; line-height: 1.05;">Mistura e masterização</h2>
+<p style="margin: 0; max-width: 280px; font-size: 15px; line-height: 1.55; color: #5C5C5C;">Ouve cada trabalho antes e depois da mistura.</p>
+</div>
+<div style="flex: 3 1 560px; min-width: 0;">
+<sc-for list="{{mistura}}" as="t" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 20px 0; border-top: 1px solid #E3E3E3;">
+<button type="button" aria-label="Ouvir {{t.title}}" style="flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #111111; background: #FFFFFF; color: #111111; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"></path></svg></button>
+<div style="flex: 1 1 220px; min-width: 0;">
+<div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.15;">{{t.title}}</div>
+<div style="margin-top: 2px; font-size: 13px; color: #5C5C5C;">{{t.meta}}</div>
+</div>
+<div role="group" aria-label="Comparar versões" style="display: inline-flex; border: 1px solid #111111; border-radius: 999px; padding: 3px;">
+<button type="button" aria-pressed="false" style="min-height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: #111111; font-family: Inter, sans-serif; font-size: 13px; cursor: pointer;">Antes</button>
+<button type="button" aria-pressed="true" style="min-height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: #111111; color: #FFFFFF; font-family: Inter, sans-serif; font-size: 13px; cursor: pointer;">Depois</button>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section id="cinematografico" style="display: flex; flex-wrap: wrap; gap: 32px 40px; padding: 72px 0; border-bottom: 1px solid #E3E3E3;">
+<div style="flex: 1 1 240px; min-width: 0;">
+<p style="margin: 0; font-size: 13px; color: #5C5C5C;">03</p>
+<h2 style="margin: 8px 0 12px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 48px; line-height: 1.05;">Áudio cinematográfico</h2>
+<p style="margin: 0; max-width: 280px; font-size: 15px; line-height: 1.55; color: #5C5C5C;">[Uma frase sobre o teu áudio cinematográfico.]</p>
+</div>
+<div style="flex: 3 1 560px; min-width: 0;">
+<sc-for list="{{cinema}}" as="t" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 20px 0; border-top: 1px solid #E3E3E3;">
+<button type="button" aria-label="Ouvir {{t.title}}" style="flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #111111; background: #FFFFFF; color: #111111; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"></path></svg></button>
+<div style="flex: 1 1 220px; min-width: 0;">
+<div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.15;">{{t.title}}</div>
+<div style="margin-top: 2px; font-size: 13px; color: #5C5C5C;">{{t.meta}}</div>
+</div>
+<span style="font-size: 13px; color: #5C5C5C;">—:—</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section id="sobre" style="display: flex; flex-wrap: wrap; gap: 32px 40px; padding: 72px 0; border-bottom: 1px solid #111111;">
+<div style="flex: 1 1 240px; min-width: 0;">
+<h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 48px; line-height: 1.05;">Sobre</h2>
+</div>
+<div style="flex: 3 1 560px; min-width: 0;">
+<dl style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; margin: 0;">
+<div style="border-top: 1px solid #E3E3E3; padding-top: 16px;">
+<dt style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #5C5C5C;">DAWs</dt>
+<dd style="margin: 10px 0 0; font-size: 16px; line-height: 1.7;">[DAW principal]<br>[DAW]</dd>
+</div>
+<div style="border-top: 1px solid #E3E3E3; padding-top: 16px;">
+<dt style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #5C5C5C;">Formação</dt>
+<dd style="margin: 10px 0 0; font-size: 16px; line-height: 1.7;">Orquestra do Colégio Militar<br><span style="color: #5C5C5C;">2013–2021</span></dd>
+</div>
+<div style="border-top: 1px solid #E3E3E3; padding-top: 16px;">
+<dt style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #5C5C5C;">Técnicas</dt>
+<dd style="margin: 10px 0 0; font-size: 16px; line-height: 1.7;">[Técnica]<br>[Técnica]<br>[Técnica]</dd>
+</div>
+</dl>
+</div>
+</section>
+
+<footer id="contacto" style="padding: 72px 0 40px;">
+<p style="margin: 0; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #5C5C5C;">Contacto</p>
+<a href="#contacto" style="display: inline-block; margin-top: 16px; font-family: 'Instrument Serif', serif; font-style: italic; font-size: clamp(40px, 7vw, 96px); line-height: 1; text-decoration: none;">[o-teu-email]</a>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-top: 72px; padding-top: 20px; border-top: 1px solid #E3E3E3; font-size: 14px; color: #5C5C5C;">
+<div style="display: flex; flex-wrap: wrap; gap: 0 24px;">
+<a href="#contacto" style="padding: 12px 0;">[Instagram]</a>
+<a href="#contacto" style="padding: 12px 0;">[SoundCloud]</a>
+<a href="#contacto" style="padding: 12px 0;">[YouTube]</a>
+</div>
+<span>© 2026 Afonso Duarte</span>
+</div>
+</footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":3200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      instrumentais: [
+        { title: '[Nome da faixa]', meta: '[Género] · [Ano]', btnBg: '#111111', btnFg: '#FFFFFF' },
+        { title: '[Nome da faixa]', meta: '[Género] · [Ano]', btnBg: '#FFFFFF', btnFg: '#111111' },
+        { title: '[Nome da faixa]', meta: '[Género] · [Ano]', btnBg: '#FFFFFF', btnFg: '#111111' }
+      ],
+      mistura: [
+        { title: '[Artista] — [Faixa]', meta: 'Mistura e master · [Ano]' },
+        { title: '[Artista] — [Faixa]', meta: 'Mistura · [Ano]' },
+        { title: '[Artista] — [Faixa]', meta: 'Master · [Ano]' }
+      ],
+      cinema: [
+        { title: '[Título do projeto]', meta: '[Tipo de projeto] · [Ano]' },
+        { title: '[Título do projeto]', meta: '[Tipo de projeto] · [Ano]' },
+        { title: '[Título do projeto]', meta: '[Tipo de projeto] · [Ano]' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
