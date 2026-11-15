@@ -122,8 +122,9 @@
       if (Math.abs(entra.currentTime - sai.currentTime) > DESALINHAMENTO) entra.currentTime = sai.currentTime;
       // Uma versão mais curta pode já ter acabado (o seu «ended» só conta quando está ativa): então a faixa termina em ordem, em vez de ficar
       // presa em silêncio. Se apenas ficou parada (voltou-se atrás depois de acabar) e quem sai toca, arranca-se para a troca se ouvir.
-      // O fim vem primeiro: um play() num elemento que acabou recomeçaria do 0.
-      if (entra.ended) { terminar(); return; }
+      // O fim vem primeiro: um play() num elemento que acabou recomeçaria do 0. Depois do seek do alinhamento o «ended» pode ler false com a
+      // posição já no fim (Chromium, num elemento que acabou a tocar), por isso a posição também conta.
+      if (entra.ended || entra.currentTime >= entra.duration) { terminar(); return; }
       if (!sai.paused && entra.paused) arrancar(entra, geracao);
       if (analise) {
         const t = contexto.currentTime;

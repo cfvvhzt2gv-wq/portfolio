@@ -155,14 +155,26 @@ test('voltar atrás e trocar para a versão mais curta que já terminou toca-a',
   });
   assert.deepEqual([r.aTocar, r.versao], [true, 'antes']); perto(r.pico, -32, 0.5);
 });
-// O ramo «já terminou» de trocarVersao só se vê sem alinhamento pendente: no Chromium, pôr currentTime num elemento que acabou faz o «ended»
-// ler false até o seek terminar (por isso o teste anterior passa também sem esse ramo). Parado e com os dois em 2,0 s, a diferença é 0.
-test('trocar, parado e sem desalinhamento, para a versão que já terminou termina a faixa', async () => {
+// Um elemento que acabou num seek (procurar) mantém o «ended» a true mesmo quando a troca lhe põe outro currentTime (o alinhamento). Sem o
+// fim em primeiro, o play() recomeçava-o do 0 e a faixa continuava com as duas versões fora de sincronia (o «antes» a tocar do início).
+test('trocar para a versão que acabou num procurar termina a faixa, sem a recomeçar', async () => {
   const r = await noBrowser(async () => {
-    const l = Portfolio.Leitor.criar({ analise: true }); let fins = 0; l.aoFim = () => fins++;
+    const l = Portfolio.Leitor.criar({ analise: true }); let fins = 0, erros = 0; l.aoFim = () => fins++; l.aoErro = () => erros++;
     await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/curto.mp3' }); await esperar(500);
-    l.pausar(); l.procurar(2.0); await esperar(150); l.trocarVersao('antes'); await esperar(300);
-    return { fins, aTocar: l.aTocar() };
+    l.procurar(2.0); await esperar(120);
+    const previos = fins; l.trocarVersao('antes'); await esperar(300);
+    return { previos, fins, erros, aTocar: l.aTocar() };
   });
-  assert.deepEqual(r, { fins: 1, aTocar: false });
+  assert.deepEqual(r, { previos: 0, fins: 1, erros: 0, aTocar: false });
+});
+// Um elemento que acabou a tocar lê «ended» false (no Chromium) enquanto dura o seek do alinhamento. Parado, ninguém arranca a versão que
+// entra, e sem ver que a posição já está no fim a faixa ficava presa em «antes»: o retomar() recomeçava essa versão do 0 (o «depois» ia nos 2,8 s).
+test('trocar, parado e com desalinhamento, para a versão que acabou a tocar termina a faixa', async () => {
+  const r = await noBrowser(async () => {
+    const l = Portfolio.Leitor.criar({ analise: true }); let fins = 0, erros = 0; l.aoFim = () => fins++; l.aoErro = () => erros++;
+    await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/curto.mp3' }); await esperar(2400);
+    l.pausar(); const previos = fins; l.trocarVersao('antes'); await esperar(300);
+    return { previos, fins, erros, aTocar: l.aTocar() };
+  });
+  assert.deepEqual(r, { previos: 0, fins: 1, erros: 0, aTocar: false });
 });
