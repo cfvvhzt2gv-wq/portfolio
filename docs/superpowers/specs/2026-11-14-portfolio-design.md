@@ -205,7 +205,7 @@ Outros casos:
 
 ## 9. Testes e verificação
 
-Correm com `node --test tests/`. Usam um conteúdo de teste e ficheiros de áudio curtos gerados pelos próprios testes (senos com níveis conhecidos).
+Correm com `node --test --test-concurrency=1` (um ficheiro de cada vez). Usam um conteúdo de teste e ficheiros de áudio curtos gerados pelos próprios testes (senos com níveis conhecidos).
 
 **Medições** (funções de `analise.js`, sem browser):
 - seno de 1 kHz a −20 dB nos dois canais: Pico −20,0 ± 0,1; RMS −23,0 ± 0,1; LUFS −20,0 ± 0,2; Correlação +1,00;
