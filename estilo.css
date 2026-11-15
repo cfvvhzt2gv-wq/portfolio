@@ -1,0 +1,111 @@
+/* Estilo do site (design B · Ficha técnica): claro, editorial, só preto e branco. */
+
+/* ---- Fontes (alojadas em fontes/; nenhum pedido a servidores externos) ---- */
+@font-face { font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap; src: url('fontes/instrument-serif-400.woff2') format('woff2'); }
+@font-face { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: swap; src: url('fontes/instrument-serif-400-italic.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('fontes/inter-400.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap; src: url('fontes/inter-500.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('fontes/ibm-plex-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('fontes/ibm-plex-mono-500.woff2') format('woff2'); }
+
+/* ---- Base ---- */
+:root {
+  color-scheme: light;
+  --fundo: #FFFFFF;
+  --texto: #111111;
+  --secundario: #5C5C5C;      /* contraste 6,7:1 sobre o fundo */
+  --subtitulo: #3D3D3D;
+  --linha: #E3E3E3;
+  --linha-forte: #111111;
+  --serif: 'Instrument Serif', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --largura: 1120px;
+  --margem: 24px;
+  --secao: 72px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font-family: var(--sans); }
+a { color: var(--texto); }
+a:hover { color: var(--secundario); }
+button { font: inherit; }
+:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
+
+/* overflow-wrap: um título, e-mail ou nome sem espaços, por maior que seja, parte-se em vez de alargar a página. */
+.pagina { max-width: calc(var(--largura) + 2 * var(--margem)); margin: 0 auto; padding: 0 var(--margem); overflow-wrap: anywhere; }
+h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; line-height: 1.05; }
+
+/* ---- Cabeçalho ---- */
+.cabecalho { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 20px 0; }
+.nome-site { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0; font-family: var(--serif); font-size: 26px; text-decoration: none; }
+.cabecalho nav { display: flex; flex-wrap: wrap; gap: 0 28px; font-size: 14px; }
+.cabecalho nav a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; }
+
+/* ---- Topo ---- */
+.topo { padding: var(--secao) 0 64px; border-bottom: 1px solid var(--linha-forte); }
+.topo h1 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(64px, 11vw, 156px); line-height: 0.9; letter-spacing: -0.025em; }
+.topo h1 em { font-style: italic; }
+.topo-rodape { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px; margin-top: 56px; }
+.apresentacao { margin: 0; max-width: 480px; font-size: 18px; line-height: 1.55; color: var(--subtitulo); }
+.local { margin: 0; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--secundario); }
+
+/* ---- Índice de categorias ---- */
+#trabalhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); border-bottom: 1px solid var(--linha); }
+.item-indice { display: flex; flex-direction: column; gap: 6px; padding: 28px 24px 28px 0; text-decoration: none; }
+.item-indice .num, .item-indice .contador { font-size: 13px; color: var(--secundario); }
+.item-indice .nome { font-family: var(--serif); font-size: 34px; line-height: 1.1; }
+
+/* ---- Categorias e faixas ---- */
+.categoria { display: flex; flex-wrap: wrap; gap: 32px 40px; padding: var(--secao) 0; border-bottom: 1px solid var(--linha); }
+.categoria-cab { flex: 1 1 240px; min-width: 0; }
+.categoria-corpo { flex: 3 1 560px; min-width: 0; }
+.categoria .num { margin: 0; font-size: 13px; color: var(--secundario); }
+.categoria h2 { margin: 8px 0 12px; }
+.descricao { margin: 0; max-width: 280px; font-size: 15px; line-height: 1.55; color: var(--secundario); }
+
+.faixa { border-top: 1px solid var(--linha); }
+.linha { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 20px 0; }
+.play { flex: 0 0 44px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--texto); border-radius: 50%; background: var(--fundo); color: var(--texto); cursor: pointer; }
+.titulo { flex: 1 1 220px; min-width: 0; }
+.titulo .nome { font-family: var(--serif); font-size: 28px; line-height: 1.15; }
+.detalhes { margin-top: 2px; font-size: 13px; color: var(--secundario); }
+.tempo { font: 400 12px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--secundario); }
+
+/* Antes | Depois: o desenho é o do design B (botões de 38 px dentro de uma cápsula de 46 px);
+   as margens transparentes de 3 px dão a cada botão 44 px de altura para o toque, sem mudar o que se vê. */
+.antes-depois { display: inline-flex; padding: 0 3px; border: 1px solid var(--texto); border-radius: 999px; }
+.antes-depois button {
+  min-height: 44px; padding: 0 16px; border: 0 solid transparent; border-block-width: 3px; border-radius: 19px / 22px;
+  background: transparent; background-clip: padding-box; color: var(--texto); font-size: 13px; cursor: pointer;
+}
+.antes-depois button[aria-pressed="true"] { background-color: var(--texto); color: var(--fundo); }
+
+/* ---- Sobre ---- */
+#sobre { display: flex; flex-wrap: wrap; gap: 32px 40px; padding: var(--secao) 0; border-bottom: 1px solid var(--linha-forte); }
+#sobre h2 { flex: 1 1 240px; align-self: flex-start; min-width: 0; }
+.sobre { flex: 3 1 560px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; margin: 0; }
+.sobre > div { border-top: 1px solid var(--linha); padding-top: 16px; }
+.sobre dt { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--secundario); }
+.sobre dd { margin: 10px 0 0; font-size: 16px; line-height: 1.7; }
+.sobre .item, .sobre .periodo { display: block; }
+.sobre .periodo { color: var(--secundario); }
+
+/* ---- Contacto ---- */
+#contacto { padding: var(--secao) 0 40px; }
+.rotulo { margin: 0; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--secundario); }
+.email { display: inline-block; min-height: 44px; margin-top: 16px; font-family: var(--serif); font-style: italic; font-size: clamp(40px, 7vw, 96px); line-height: 1; text-decoration: none; }
+.rodape-linha { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--secundario); }
+.redes { display: flex; flex-wrap: wrap; gap: 0 24px; }
+.redes a { display: inline-flex; align-items: center; min-height: 44px; }
+
+.sem-js { margin: 0; padding: 24px 0; font-size: 16px; }
+
+/* ---- Telemóvel: uma só coluna ---- */
+@media (max-width: 640px) {
+  #trabalhos, .sobre { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
