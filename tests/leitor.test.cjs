@@ -155,3 +155,14 @@ test('voltar atrás e trocar para a versão mais curta que já terminou toca-a',
   });
   assert.deepEqual([r.aTocar, r.versao], [true, 'antes']); perto(r.pico, -32, 0.5);
 });
+// O ramo «já terminou» de trocarVersao só se vê sem alinhamento pendente: no Chromium, pôr currentTime num elemento que acabou faz o «ended»
+// ler false até o seek terminar (por isso o teste anterior passa também sem esse ramo). Parado e com os dois em 2,0 s, a diferença é 0.
+test('trocar, parado e sem desalinhamento, para a versão que já terminou termina a faixa', async () => {
+  const r = await noBrowser(async () => {
+    const l = Portfolio.Leitor.criar({ analise: true }); let fins = 0; l.aoFim = () => fins++;
+    await l.tocar({ url: 'audio/a.mp3', urlAntes: 'audio/curto.mp3' }); await esperar(500);
+    l.pausar(); l.procurar(2.0); await esperar(150); l.trocarVersao('antes'); await esperar(300);
+    return { fins, aTocar: l.aTocar() };
+  });
+  assert.deepEqual(r, { fins: 1, aTocar: false });
+});
