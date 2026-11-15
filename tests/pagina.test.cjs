@@ -85,3 +85,15 @@ test('Review Focus 1: texto do conteúdo nunca vira HTML', () => {
     assert.equal(await page.locator('.faixa b, .cabecalho i, .redes b').count(), 0);
   });
 });
+test('página: todos os links e botões visíveis medem pelo menos 44 × 44 px, a 1280 e a 390 px', async () => {
+  const c = base(); c.nome = 'Zé'; c.contacto.redes.push({ nome: 'X', url: 'https://exemplo.pt/x' });   // nomes curtos: o alvo não pode encolher com o texto
+  const pequenos = [];
+  for (const largura of [1280, 390]) {
+    const alvos = await comPagina({ conteudo: comoJs(c), largura }, (page) => page.$$eval('a, button', (els) => els
+      .filter((e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden')
+      .map((e) => { const r = e.getBoundingClientRect(); return { nome: e.getAttribute('aria-label') || e.textContent.trim(), w: r.width, h: r.height }; })));
+    for (const nome of ['Zé', 'Sobre', 'X', 'Ouvir Primeira', 'Antes', 'Depois']) assert.ok(alvos.some((a) => a.nome === nome), `a ${largura} px, «${nome}» não foi medido`);
+    pequenos.push(...alvos.filter((a) => a.w < 44 || a.h < 44).map((a) => `${largura} px: «${a.nome}» ${a.w.toFixed(1)} × ${a.h.toFixed(1)}`));
+  }
+  assert.deepEqual(pequenos, []);
+});

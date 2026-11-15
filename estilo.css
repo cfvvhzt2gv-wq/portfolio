@@ -23,6 +23,7 @@
   --largura: 1120px;
   --margem: 24px;
   --secao: 72px;
+  --alvo: 44px;               /* alvo de toque mínimo (spec §7), em largura e em altura, mesmo com um texto curto */
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -38,9 +39,9 @@ h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; li
 
 /* ---- Cabeçalho ---- */
 .cabecalho { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 20px 0; }
-.nome-site { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0; font-family: var(--serif); font-size: 26px; text-decoration: none; }
+.nome-site { display: inline-flex; align-items: center; min-width: var(--alvo); min-height: var(--alvo); padding: 8px 0; font-family: var(--serif); font-size: 26px; text-decoration: none; }
 .cabecalho nav { display: flex; flex-wrap: wrap; gap: 0 28px; font-size: 14px; }
-.cabecalho nav a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; }
+.cabecalho nav a { display: inline-flex; align-items: center; justify-content: center; min-width: var(--alvo); min-height: var(--alvo); text-decoration: none; }
 
 /* ---- Topo ---- */
 .topo { padding: var(--secao) 0 64px; border-bottom: 1px solid var(--linha-forte); }
@@ -66,7 +67,7 @@ h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; li
 
 .faixa { border-top: 1px solid var(--linha); }
 .linha { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 20px 0; }
-.play { flex: 0 0 44px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--texto); border-radius: 50%; background: var(--fundo); color: var(--texto); cursor: pointer; }
+.play { flex: 0 0 var(--alvo); width: var(--alvo); height: var(--alvo); display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--texto); border-radius: 50%; background: var(--fundo); color: var(--texto); cursor: pointer; }
 .titulo { flex: 1 1 220px; min-width: 0; }
 .titulo .nome { font-family: var(--serif); font-size: 28px; line-height: 1.15; }
 .detalhes { margin-top: 2px; font-size: 13px; color: var(--secundario); }
@@ -76,7 +77,7 @@ h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; li
    as margens transparentes de 3 px dão a cada botão 44 px de altura para o toque, sem mudar o que se vê. */
 .antes-depois { display: inline-flex; padding: 0 3px; border: 1px solid var(--texto); border-radius: 999px; }
 .antes-depois button {
-  min-height: 44px; padding: 0 16px; border: 0 solid transparent; border-block-width: 3px; border-radius: 19px / 22px;
+  min-height: var(--alvo); padding: 0 16px; border: 0 solid transparent; border-block-width: 3px; border-radius: 19px / 22px;
   background: transparent; background-clip: padding-box; color: var(--texto); font-size: 13px; cursor: pointer;
 }
 .antes-depois button[aria-pressed="true"] { background-color: var(--texto); color: var(--fundo); }
@@ -94,10 +95,10 @@ h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; li
 /* ---- Contacto ---- */
 #contacto { padding: var(--secao) 0 40px; }
 .rotulo { margin: 0; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--secundario); }
-.email { display: inline-block; min-height: 44px; margin-top: 16px; font-family: var(--serif); font-style: italic; font-size: clamp(40px, 7vw, 96px); line-height: 1; text-decoration: none; }
+.email { display: inline-block; min-height: var(--alvo); margin-top: 16px; font-family: var(--serif); font-style: italic; font-size: clamp(40px, 7vw, 96px); line-height: 1; text-decoration: none; }
 .rodape-linha { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--linha); font-size: 14px; color: var(--secundario); }
 .redes { display: flex; flex-wrap: wrap; gap: 0 24px; }
-.redes a { display: inline-flex; align-items: center; min-height: 44px; }
+.redes a { display: inline-flex; align-items: center; justify-content: center; min-width: var(--alvo); min-height: var(--alvo); }
 
 .sem-js { margin: 0; padding: 24px 0; font-size: 16px; }
 
