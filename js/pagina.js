@@ -195,7 +195,7 @@
   const LEITURAS = [['nivel', 'Nível'], ['pico', 'Pico'], ['rms', 'RMS'], ['lufs', 'LUFS'], ['correlacao', 'Correlação']];
   const INSTRUMENTOS = [['espectro', 'Espectro'], ['estereo', 'Campo estéreo']];
   const INDISPONIVEL = 'Indisponível';
-  const FONTE_ROTULOS = '400 10px "IBM Plex Mono"';
+  const FONTES_ROTULOS = ['400 10px "IBM Plex Mono"', '500 10px "IBM Plex Mono"'];
 
   const canvasDecorativo = (doc) => no(doc, 'canvas', { 'aria-hidden': 'true' });
 
@@ -525,7 +525,7 @@
     // Mudar de tamanho apaga os canvases: com a faixa parada ou em pausa redesenham-se; a tocar, o próximo quadro trata disso.
     const redesenharSeParado = () => { if (ativa && !ciclo) redesenharTudo(ativa); };
     janela.addEventListener('resize', redesenharSeParado);
-    if (doc.fonts && doc.fonts.load) doc.fonts.load(FONTE_ROTULOS).then(redesenharSeParado, () => {});
+    if (doc.fonts && doc.fonts.load) Promise.all(FONTES_ROTULOS.map((f) => doc.fonts.load(f))).then(redesenharSeParado, () => {});
   }
 
   function iniciar(conteudo, janela = window) {

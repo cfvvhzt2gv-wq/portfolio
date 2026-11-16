@@ -6,6 +6,7 @@
   // Cores: variáveis CSS do :root, com os valores do spec como alternativa. Lidas uma só vez, no primeiro desenho.
   const CORES = { ink: ['--ink', '#111111'], muted: ['--muted', '#5C5C5C'], line: ['--line', '#E3E3E3'], ghost: ['--ghost', '#C9C9C9'], bg: ['--bg', '#FFFFFF'] };
   const ROTULO = '400 10px "IBM Plex Mono", ui-monospace, monospace';
+  const ROTULO_MLR = '500 10px "IBM Plex Mono", ui-monospace, monospace';   // M, L e R, como no protótipo aprovado
 
   const DPR_MAXIMO = 2, TAMANHO_MINIMO = 16;                 // acima de 2 pixéis por px a nitidez não compensa; abaixo de 16 px não se desenha
 
@@ -140,7 +141,7 @@
     ctx.strokeStyle = c.ink; ctx.lineWidth = 1;
     losango(1, ALFA_CONTORNO); losango(2 / 3, ALFA_GRELHA); losango(1 / 3, ALFA_GRELHA);
     ctx.globalAlpha = ALFA_GRELHA; ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
-    ctx.globalAlpha = 1; ctx.fillStyle = c.muted; ctx.font = ROTULO; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 1; ctx.fillStyle = c.muted; ctx.font = ROTULO_MLR; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('M', cx, cy - r - 9); ctx.fillText('L', cx - r / 2 - 10, cy - r / 2 - 10); ctx.fillText('R', cx + r / 2 + 10, cy - r / 2 - 10);
   }
 
