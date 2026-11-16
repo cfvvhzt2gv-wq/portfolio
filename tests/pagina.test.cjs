@@ -119,3 +119,15 @@ test('R2: só se mostram links de redes com http(s); javascript: e endereços se
     assert.equal(await page.locator('.redes a').count(), 0); assert.equal(await page.locator('a[href^="javascript:"]').count(), 0); assert.equal(await page.locator('.redes').count(), 0);
   });
 });
+test('R5: apagar a linha de um campo opcional do conteudo.js real nunca faz desaparecer uma faixa', () => {
+  const vm = require('node:vm'), fs = require('node:fs'), path = require('node:path');
+  const linhas = fs.readFileSync(path.join(__dirname, '..', 'conteudo.js'), 'utf8').split('\n');
+  const faixas = (codigo) => { const janela = {}; vm.runInNewContext(codigo, { window: janela }); return P.preparar(janela.CONTEUDO).categorias.map((c) => c.faixas.length); };
+  const todas = faixas(linhas.join('\n'));
+  assert.deepEqual(todas, [1, 1, 1]);
+  // Linhas que só têm um campo opcional (e o seu valor, sem mais nada).
+  const opcional = /^\s*(local|email|descricao|genero|ano|artista|servico|tipo|periodo): .*,\s*$/;
+  const alvos = linhas.map((l, i) => [l, i]).filter(([l]) => opcional.test(l));
+  assert.ok(alvos.length >= 12, `só ${alvos.length} linhas de campos opcionais encontradas`);
+  for (const [l, i] of alvos) assert.deepEqual(faixas(linhas.filter((_, j) => j !== i).join('\n')), todas, `ao apagar «${l.trim()}» (linha ${i + 1}) desaparece uma faixa`);
+});

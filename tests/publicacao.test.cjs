@@ -14,3 +14,9 @@ test('o workflow copia só os ficheiros do site para _site', () => {
   assert.ok(linha, 'falta o cp -r para _site'); assert.deepEqual(linha.trim().replace(/^cp -r /, '').replace(/ _site\/?$/, '').split(' ').sort(), ['audio', 'conteudo.js', 'estilo.css', 'fontes', 'index.html', 'js']);
 });
 test('.gitignore ignora as formas de onda geradas e a pasta de publicação', () => { const g = ler('.gitignore').split('\n'); assert.ok(g.includes('*.onda.json') && g.includes('_site/')); });
+test('o README não manda usar o http.server do Python (não suporta Range) nem fala do «ramo main»', () => {
+  const r = ler('README.md');
+  assert.doesNotMatch(r, /http\.server/); assert.match(r, /npx http-server/);
+  assert.doesNotMatch(r, /ramo `main`|ao `main`/); assert.match(r, /\*\*Commit directly to the main branch\*\*/);
+  assert.match(r, /audio\/instrumentais\/noite-em-lisboa\.mp3/);
+});

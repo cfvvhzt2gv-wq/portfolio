@@ -4,8 +4,12 @@
   Como editar
   - Substitui tudo o que está entre [parênteses retos] pelo teu texto, sem os parênteses.
     Enquanto houver [parênteses retos] por preencher, o site não é publicado.
-  - Se não quiseres mostrar um campo (o local, o género, o ano...), apaga essa linha.
+  - Para esconder um campo opcional (o local, o género, o ano, o tipo...), apaga a linha inteira dele.
+    O título e o(s) ficheiro(s) de cada faixa nunca se apagam: sem eles a faixa desaparece do site.
+  - Numa lista (as DAWs, as técnicas), apaga só o item que não queres, com a vírgula a seguir:
+    ["Logic Pro", "Outra DAW"] passa a ["Logic Pro"].
   - Mantém as aspas "..." e a vírgula no fim de cada linha.
+  - Se um texto tiver aspas, usa « » ou ’ em vez de " (senão o ficheiro deixa de funcionar).
   - O ano pode ser um número (2026) ou um texto ("2026").
 
   Como acrescentar uma faixa
@@ -31,7 +35,10 @@ window.CONTEUDO = {
   sobre: {
     daws: ["[DAW principal]", "[Outra DAW]"],
     formacao: [
-      { titulo: "Orquestra do Colégio Militar", periodo: "2013–2021" },
+      {
+        titulo: "Orquestra do Colégio Militar",
+        periodo: "2013–2021",
+      },
     ],
     tecnicas: ["[Técnica]", "[Técnica]", "[Técnica]"],
   },
@@ -39,22 +46,33 @@ window.CONTEUDO = {
     instrumentais: {
       descricao: "[Uma frase sobre os teus instrumentais.]",
       faixas: [
-        { titulo: "[Nome da faixa]", genero: "[Género]", ano: "[Ano]", ficheiro: "[audio/instrumentais/ficheiro.mp3]" },
+        {
+          titulo: "[Nome da faixa]", ficheiro: "[audio/instrumentais/ficheiro.mp3]",
+          genero: "[Género]",
+          ano: "[Ano]",
+        },
       ],
     },
     mistura: {
       descricao: "[Ouve cada trabalho antes e depois da mistura.]",
       faixas: [
         {
-          artista: "[Artista]", titulo: "[Faixa]", servico: "[Mistura e master]", ano: "[Ano]",
+          titulo: "[Faixa]",
           antes: "[audio/mistura/faixa-antes.mp3]", depois: "[audio/mistura/faixa-depois.mp3]",
+          artista: "[Artista]",
+          servico: "[Mistura e master]",
+          ano: "[Ano]",
         },
       ],
     },
     cinematografico: {
       descricao: "[Uma frase sobre o teu áudio cinematográfico.]",
       faixas: [
-        { titulo: "[Título do projeto]", tipo: "[Tipo de projeto]", ano: "[Ano]", ficheiro: "[audio/cinematografico/ficheiro.mp3]" },
+        {
+          titulo: "[Título do projeto]", ficheiro: "[audio/cinematografico/ficheiro.mp3]",
+          tipo: "[Tipo de projeto]",
+          ano: "[Ano]",
+        },
       ],
     },
   },
