@@ -178,3 +178,18 @@ test('trocar, parado e com desalinhamento, para a versão que acabou a tocar ter
   });
   assert.deepEqual(r, { previos: 0, fins: 1, erros: 0, aTocar: false });
 });
+test('amostras: o par esquerda/direita é um instantâneo coerente (canais idênticos ficam idênticos)', async () => {
+  const r = await noBrowser(async () => {
+    const l = Portfolio.Leitor.criar({ analise: true }), e = new Float32Array(Portfolio.Leitor.JANELA), d = new Float32Array(e.length);
+    await l.tocar({ url: 'audio/a.mp3' }); await esperar(300);
+    let leituras = 0, desfasadas = 0; const fim = performance.now() + 3000;
+    await new Promise((feito) => { const volta = () => {
+      if (performance.now() >= fim) return feito();
+      l.amostras(e, d); leituras++;
+      for (let i = e.length - 2048; i < e.length; i++) if (e[i] !== d[i]) { desfasadas++; break; }
+      setTimeout(volta, 0);
+    }; volta(); });
+    l.parar(); return { leituras, desfasadas };
+  });
+  assert.ok(r.leituras > 300, `só ${r.leituras} leituras`); assert.equal(r.desfasadas, 0, `${r.desfasadas} de ${r.leituras} leituras com os canais desfasados`);
+});

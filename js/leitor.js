@@ -8,6 +8,7 @@
   const SUAVIZACAO_ESPECTRO = 0.72;
   const PASSAGEM = 0.03;                       // s: passagem de ganhos entre as duas versões
   const DESALINHAMENTO = 0.05;                 // s: acima desta diferença de posição, a versão que entra é alinhada com a que sai
+  const TENTATIVAS_INSTANTANEO = 4;            // leituras de esq, dir e esq até os dois canais serem do mesmo instante
   const FOLGA_FIM = 0.05;                      // s: procurar nunca passa de duração − FOLGA_FIM, para a faixa terminar em ordem
 
   // O grafo comum a todas as faixas: cada versão chega à entrada (estéreo) por um ganho; a entrada vai para o destino e para os analisadores.
@@ -145,9 +146,18 @@
     function versao() { return emCurso ? emCurso.ativa : 'depois'; }
     function aTocar() { const a = ativo(); return !!a && !a.paused && !a.ended; }
 
+    // Os dois analisadores leem-se um a seguir ao outro e o áudio pode avançar entre as leituras: lê-se esq, dir e esq outra vez, e se esq
+    // mudou repete-se (poucas vezes; depois aceita-se a última), para os dois canais serem do mesmo instante.
+    let conferencia = null;
     function amostras(esq, dir) {
       if (!grafo) return false;
-      grafo.esq.getFloatTimeDomainData(esq); grafo.dir.getFloatTimeDomainData(dir);
+      if (!conferencia || conferencia.length !== esq.length) conferencia = new Float32Array(esq.length);
+      for (let tentativa = 0; tentativa < TENTATIVAS_INSTANTANEO; tentativa++) {
+        grafo.esq.getFloatTimeDomainData(esq); grafo.dir.getFloatTimeDomainData(dir); grafo.esq.getFloatTimeDomainData(conferencia);
+        let igual = true;
+        for (let i = 0; i < esq.length && igual; i++) igual = esq[i] === conferencia[i];
+        if (igual) break;
+      }
       return true;
     }
     function espectro(saida) {
