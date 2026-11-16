@@ -73,6 +73,9 @@ h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; li
 .detalhes { margin-top: 2px; font-size: 13px; color: var(--secundario); }
 .tempo { font: 400 12px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--secundario); }
 
+.play:disabled { opacity: 0.35; cursor: default; }
+.faixa[data-estado="a-tocar"] .play, .faixa[data-estado="em-pausa"] .play { background: var(--texto); color: var(--fundo); }
+
 /* Antes | Depois: o desenho é o do design B (botões de 38 px dentro de uma cápsula de 46 px);
    as margens transparentes de 3 px dão a cada botão 44 px de altura para o toque, sem mudar o que se vê. */
 .antes-depois { display: inline-flex; padding: 0 3px; border: 1px solid var(--texto); border-radius: 999px; }
@@ -81,6 +84,23 @@ h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; li
   background: transparent; background-clip: padding-box; color: var(--texto); font-size: 13px; cursor: pointer;
 }
 .antes-depois button[aria-pressed="true"] { background-color: var(--texto); color: var(--fundo); }
+
+/* ---- Painel de instrumentos (faixa ativa) ---- */
+.painel { display: grid; gap: 18px; padding: 2px 0 26px; }
+.painel > * { min-width: 0; }
+.onda { height: 56px; cursor: pointer; touch-action: pan-y; }
+.onda canvas, .tela canvas { display: block; width: 100%; height: 100%; }
+.instrumentos { display: grid; grid-template-columns: minmax(0, 1fr) 208px; gap: 28px; }
+.inst { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin: 0; }
+.inst figcaption { font: 500 10px/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--secundario); }
+.tela { height: 208px; }
+.leituras { display: flex; flex-wrap: wrap; gap: 12px 30px; margin: 0; padding-top: 14px; border-top: 1px solid var(--linha); }
+.leituras > div { display: flex; flex-direction: column; gap: 3px; min-width: 78px; }
+.leituras dt { font: 500 10px/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--secundario); }
+.leituras dd { margin: 0; font: 400 14px/1.4 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nivel { position: relative; display: block; width: 96px; height: 6px; margin-top: 7px; background: var(--linha); }
+.nivel i { position: absolute; top: 0; bottom: 0; left: 0; width: 0; background: var(--texto); }
+.nivel b { position: absolute; top: -3px; bottom: -3px; left: 0; width: 1px; background: var(--texto); }
 
 /* ---- Sobre ---- */
 #sobre { display: flex; flex-wrap: wrap; gap: 32px 40px; padding: var(--secao) 0; border-bottom: 1px solid var(--linha-forte); }
@@ -105,6 +125,9 @@ h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 48px; li
 /* ---- Telemóvel: uma só coluna ---- */
 @media (max-width: 640px) {
   #trabalhos, .sobre { grid-template-columns: 1fr; }
+  .instrumentos { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .tela { height: 184px; }
+  .inst[data-instrumento="estereo"] .tela { height: 232px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

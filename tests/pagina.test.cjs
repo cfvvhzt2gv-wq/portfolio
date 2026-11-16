@@ -85,11 +85,25 @@ test('Review Focus 1: texto do conteúdo nunca vira HTML', () => {
     assert.equal(await page.locator('.faixa b, .cabecalho i, .redes b').count(), 0);
   });
 });
+test('decidirModo: file:, sem Web Audio e iOS antigo → simples', () => {
+  const ok = { protocolo: 'https:', temWebAudio: true, ios: false, temAudioSession: false };
+  assert.equal(P.decidirModo(ok), 'completo');
+  assert.equal(P.decidirModo({ ...ok, protocolo: 'file:' }), 'simples');
+  assert.equal(P.decidirModo({ ...ok, temWebAudio: false }), 'simples');
+  assert.equal(P.decidirModo({ ...ok, ios: true, temAudioSession: false }), 'simples');
+  assert.equal(P.decidirModo({ ...ok, ios: true, temAudioSession: true }), 'completo');
+});
+test('validarOnda e ondaUrl', () => {
+  const picos = Array(800).fill(10);
+  assert.deepEqual(P.validarOnda({ duracao: 6, picos }), { duracao: 6, picos });
+  for (const mau of [null, '{', { duracao: 'x', picos }, { duracao: 0, picos }, { duracao: 6, picos: picos.slice(1) }, { duracao: 6, picos: [...picos.slice(1), 256] }, { duracao: 6, picos: [...picos.slice(1), 1.5] }]) assert.equal(P.validarOnda(mau), null);
+  assert.equal(P.ondaUrl('audio/a.mp3'), 'audio/a.onda.json'); assert.equal(P.ondaUrl('x/B.MP3'), 'x/B.onda.json');
+});
 test('página: todos os links e botões visíveis medem pelo menos 44 × 44 px, a 1280 e a 390 px', async () => {
   const c = base(); c.nome = 'Zé'; c.contacto.redes.push({ nome: 'X', url: 'https://exemplo.pt/x' });   // nomes curtos: o alvo não pode encolher com o texto
   const pequenos = [];
   for (const largura of [1280, 390]) {
-    const alvos = await comPagina({ conteudo: comoJs(c), largura }, (page) => page.$$eval('a, button', (els) => els
+    const alvos = await comPagina({ conteudo: comoJs(c), largura }, (page) => page.$$eval('a, button, [role=slider], input', (els) => els
       .filter((e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden')
       .map((e) => { const r = e.getBoundingClientRect(); return { nome: e.getAttribute('aria-label') || e.textContent.trim(), w: r.width, h: r.height }; })));
     for (const nome of ['Zé', 'Sobre', 'X', 'Ouvir Primeira', 'Antes', 'Depois']) assert.ok(alvos.some((a) => a.nome === nome), `a ${largura} px, «${nome}» não foi medido`);

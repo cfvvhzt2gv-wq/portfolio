@@ -25,4 +25,19 @@ function wav({ segundos = 6, db = -20, esqDb = db, dirDb = db, inverterDir = fal
   return Buffer.concat([c, dados]);
 }
 
-module.exports = { wav };
+// JSON de `nome.onda.json`: 800 picos iguais, com o nível de um seno de `db` dBFS (0 a 255).
+function onda({ segundos = 6, db = -20 } = {}) {
+  return JSON.stringify({ duracao: segundos, picos: Array(800).fill(Math.round(255 * 10 ** (db / 20))) });
+}
+
+// Os ficheiros dos quatro MP3 de `base()` (6 s; o «antes» a −32 dB, os outros a −20 dB) e os respetivos `.onda.json` com o mesmo nível.
+function faixasTeste({ semOnda = false } = {}) {
+  const niveis = { '/audio/i1': -20, '/audio/m1-antes': -32, '/audio/m1-depois': -20, '/audio/c1': -20 }, ficheiros = {};
+  for (const [nome, db] of Object.entries(niveis)) {
+    ficheiros[`${nome}.mp3`] = wav({ segundos: 6, db });
+    if (!semOnda) ficheiros[`${nome}.onda.json`] = onda({ segundos: 6, db });
+  }
+  return ficheiros;
+}
+
+module.exports = { wav, onda, faixasTeste };
