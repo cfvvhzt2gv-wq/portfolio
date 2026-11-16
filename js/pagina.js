@@ -430,11 +430,17 @@
       procurar(c, limitar((x - r.left) / r.width, 0, 1) * d);
     }
 
-    // Durante o arrasto o som pausa e retoma ao largar (se estava a tocar).
-    function soltar(c) {
+    // Durante o arrasto o som pausa e retoma ao largar (se estava a tocar). Um arrasto cancelado (pointercancel) volta à posição de onde partiu.
+    function comecarArrasto(c) {
+      c.arrasto = { retomar: c.estado === 'a-tocar', origem: leitor.posicao() };
+      if (c.arrasto.retomar) { leitor.pausar(); pararCiclo(); }
+    }
+    function soltar(c, cancelado) {
       const a = c.arrasto;
       c.arrasto = null;
-      if (a && a.retomar && ativa === c && c.estado === 'a-tocar') { leitor.retomar(); iniciarCiclo(); }
+      if (!a || ativa !== c) return;
+      if (cancelado) procurar(c, a.origem);
+      if (a.retomar && c.estado === 'a-tocar') { leitor.retomar(); iniciarCiclo(); }
     }
 
     function alvoDoTeclado(tecla, pos, d) {
@@ -450,15 +456,24 @@
 
     function ligarOnda(c) {
       const onda = c.painel.onda;
+      // Rato: procura logo ao carregar. Toque e caneta: carregar não faz nada (o browser pode estar a começar a deslizar a página na vertical, e
+      // então chega pointercancel); um toque procura ao levantar, e o arrasto só começa no primeiro movimento sobretudo horizontal.
+      let toque = null;                                            // { x, y } do pointerdown de um toque, até haver arrasto ou toque
+      const comRato = (e) => e.pointerType === 'mouse' || !e.pointerType;
       onda.addEventListener('pointerdown', (e) => {
         if (e.button > 0) return;
         try { onda.setPointerCapture(e.pointerId); } catch {}
-        c.arrasto = { retomar: c.estado === 'a-tocar' };
-        if (c.arrasto.retomar) { leitor.pausar(); pararCiclo(); }
-        procurarNoPonto(c, e.clientX);
+        if (comRato(e)) { comecarArrasto(c); procurarNoPonto(c, e.clientX); } else toque = { x: e.clientX, y: e.clientY };
       });
-      onda.addEventListener('pointermove', (e) => { if (c.arrasto) procurarNoPonto(c, e.clientX); });
-      for (const nome of ['pointerup', 'pointercancel']) onda.addEventListener(nome, () => soltar(c));
+      onda.addEventListener('pointermove', (e) => {
+        if (toque && Math.abs(e.clientX - toque.x) > Math.abs(e.clientY - toque.y)) { toque = null; comecarArrasto(c); }
+        if (c.arrasto) procurarNoPonto(c, e.clientX);
+      });
+      onda.addEventListener('pointerup', (e) => {
+        if (toque) { toque = null; procurarNoPonto(c, e.clientX); return; }
+        soltar(c, false);
+      });
+      onda.addEventListener('pointercancel', () => { toque = null; soltar(c, true); });
       onda.addEventListener('keydown', (e) => {
         const d = duracaoDe(c);
         if (!d || e.altKey || e.ctrlKey || e.metaKey) return;

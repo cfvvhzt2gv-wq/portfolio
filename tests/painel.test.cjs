@@ -118,3 +118,34 @@ test('Review Focus 5: título longo, 390 px e rotação com o painel aberto, sem
     const [w, cw] = await page.$eval(`${faixa(I)} .onda`, (e) => [e.getBoundingClientRect().width, e.querySelector('canvas').width]); perto(cw, w, 1);
   });
 });
+// Entrada de toque: eventos de ponteiro sintéticos com pointerType 'touch' (o Playwright não emite ponteiros de toque que o Chromium
+// trate como pan-y; os eventos sintéticos exercitam exatamente os mesmos tratadores).
+const toque = (page, id, tipo, fx, extra = {}) => page.evaluate(([sel, tipo, fx, extra]) => {
+  const el = document.querySelector(sel), r = el.getBoundingClientRect();
+  el.dispatchEvent(new PointerEvent(tipo, { pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, bubbles: true, cancelable: true,
+    clientX: r.left + r.width * fx + (extra.dx || 0), clientY: r.top + r.height / 2 + (extra.dy || 0) }));
+}, [`${faixa(id)} .onda`, tipo, fx, extra]);
+test('toque: pointerdown seguido de pointercancel (deslizar na vertical) não mexe na posição nem pausa', () => abrir({}, async (page, { erros }) => {
+  await tocar(page, I, 1000); const antes = await pos(page, I);
+  await toque(page, I, 'pointerdown', 0.8); await page.waitForTimeout(100);
+  await toque(page, I, 'pointermove', 0.8, { dy: 30 }); await toque(page, I, 'pointercancel', 0.8, { dy: 30 }); await page.waitForTimeout(400);
+  const depois = await pos(page, I);
+  assert.ok(depois >= antes && depois - antes < 1.2, `a posição saltou: ${antes} → ${depois}`);
+  assert.equal(await estado(page, I), 'a-tocar'); assert.deepEqual(erros, []);
+}));
+test('toque: um toque (down + up) a um quarto da largura procura aí', () => abrir({}, async (page) => {
+  await tocar(page, I, 400);
+  await toque(page, I, 'pointerdown', 0.25); await toque(page, I, 'pointerup', 0.25); await page.waitForTimeout(150);
+  perto(await pos(page, I), 1.5, 0.5); assert.equal(await estado(page, I), 'a-tocar');
+}));
+test('toque: arrastar na horizontal pausa e procura; ao largar retoma', () => abrir({}, async (page) => {
+  await tocar(page, I, 400);
+  await toque(page, I, 'pointerdown', 0.25); await toque(page, I, 'pointermove', 0.75, { dy: 2 }); await toque(page, I, 'pointerup', 0.75); await page.waitForTimeout(150);
+  perto(await pos(page, I), 4.5, 0.5); assert.equal(await estado(page, I), 'a-tocar');
+}));
+test('alvos de toque: a forma de onda mede pelo menos 44 × 44 px, a 1280 e a 390 px', async () => {
+  for (const largura of [1280, 390]) {
+    const r = await abrir({ largura }, async (page) => { await tocar(page, I, 300); const b = await page.locator(`${faixa(I)} .onda`).boundingBox(); return [b.width, b.height]; });
+    assert.ok(r[0] >= 44 && r[1] >= 44, `${largura} px: ${r}`);
+  }
+});
