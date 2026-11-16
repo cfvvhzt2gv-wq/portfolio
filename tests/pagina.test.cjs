@@ -111,3 +111,11 @@ test('página: todos os links e botões visíveis medem pelo menos 44 × 44 px, 
   }
   assert.deepEqual(pequenos, []);
 });
+test('R2: só se mostram links de redes com http(s); javascript: e endereços sem esquema ficam de fora', () => {
+  const redes = [{ nome: 'Mau', url: 'javascript:alert(1)' }, { nome: 'Sem esquema', url: 'instagram.com/x' }, { nome: 'Bom', url: 'https://exemplo.pt/x' }, { nome: 'Antigo', url: 'HTTP://exemplo.pt' }];
+  assert.deepEqual(P.preparar({ nome: 'N', contacto: { redes } }).redes.map((r) => r.nome), ['Bom', 'Antigo']);
+  const c = base(); c.contacto.redes = redes.slice(0, 2);
+  return comPagina({ conteudo: comoJs(c) }, async (page) => {
+    assert.equal(await page.locator('.redes a').count(), 0); assert.equal(await page.locator('a[href^="javascript:"]').count(), 0); assert.equal(await page.locator('.redes').count(), 0);
+  });
+});

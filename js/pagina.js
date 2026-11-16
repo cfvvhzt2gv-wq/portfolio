@@ -67,7 +67,7 @@
       nome: comoTexto(c.nome),
       local: comoTexto(c.local) || null,
       email: comoTexto(contacto.email) || null,
-      redes: lista(contacto.redes).map(objeto).map((r) => ({ nome: comoTexto(r.nome), url: comoTexto(r.url) })).filter((r) => r.nome && r.url),
+      redes: lista(contacto.redes).map(objeto).map((r) => ({ nome: comoTexto(r.nome), url: comoTexto(r.url) })).filter((r) => r.nome && /^https?:\/\//i.test(r.url)),   // só ligações web: sem esquema seria um link relativo partido, e javascript: seria perigoso
       categorias,
       sobre: lerSobre(c.sobre),
     };

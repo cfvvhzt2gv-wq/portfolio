@@ -72,12 +72,39 @@ function validarCategorias(conteudo, problemas) {
   return { ficheiros, faixas };
 }
 
-// Confirma que cada ficheiro indicado existe (os que ainda são marcadores já foram assinalados).
+const eMarcador = (texto) => texto.startsWith('[') && texto.endsWith(']');
+
+// O que está errado num caminho de áudio, ou null. O site publicado só leva a pasta audio/, e o endereço do MP3 é o próprio caminho.
+function defeitoDoCaminho(caminho) {
+  if (!caminho.startsWith('audio/')) return 'o MP3 tem de estar dentro da pasta audio/ e o caminho tem de começar por «audio/»';
+  if (/\.\.|[\\#?%]/.test(caminho)) return 'o caminho não pode ter «..», «\\», «#», «?» nem «%» (renomeia o ficheiro, só com letras, números e hífenes)';
+  if (!/\.mp3$/i.test(caminho)) return 'tem de ser um ficheiro .mp3, dentro da pasta audio/';
+  return null;
+}
+
+// Confirma que cada ficheiro indicado fica na pasta audio/ e existe (os que ainda são marcadores já foram assinalados).
 function verificarFicheiros(raiz, ficheiros, problemas) {
   for (const { caminho, titulo } of ficheiros) {
-    if (caminho.startsWith('[') && caminho.endsWith(']')) continue;
-    if (!fs.existsSync(path.join(raiz, caminho))) problemas.push(`Falta o ficheiro «${caminho}» (faixa «${titulo}»).`);
+    if (eMarcador(caminho)) continue;
+    const quem = `«${caminho}» (faixa «${titulo}»)`, defeito = defeitoDoCaminho(caminho);
+    if (defeito) { problemas.push(`O ficheiro ${quem}: ${defeito}.`); continue; }
+    let info = null;
+    try { info = fs.statSync(path.join(raiz, caminho)); } catch { /* não existe */ }
+    if (!info) problemas.push(`Falta o ficheiro «${caminho}» (faixa «${titulo}»).`);
+    else if (!info.isFile()) problemas.push(`O ficheiro ${quem}: é uma pasta, não um MP3; o MP3 tem de estar dentro da pasta audio/.`);
   }
+}
+
+// Cada ligação de rede social tem de ser um endereço web completo, senão fica um link partido (ou perigoso) no site.
+function verificarRedes(conteudo, problemas) {
+  const redes = objeto(conteudo.contacto).redes;
+  if (!Array.isArray(redes)) return;
+  redes.forEach((bruta, i) => {
+    const rede = objeto(bruta), url = textoPreenchido(rede.url) ? rede.url.trim() : '';
+    if (!url || eMarcador(url) || /^https?:\/\//i.test(url)) return;
+    const nome = textoPreenchido(rede.nome) ? rede.nome.trim() : `rede ${i + 1}`;
+    problemas.push(`A ligação da rede «${nome}» tem de começar por https:// (por exemplo https://instagram.com/o-teu-nome); agora está «${url}».`);
+  });
 }
 
 function verificar(raiz) {
@@ -86,6 +113,7 @@ function verificar(raiz) {
   const problemas = [];
   procurarMarcadores(conteudo, '', problemas);
   const { ficheiros, faixas } = validarCategorias(conteudo, problemas);
+  verificarRedes(conteudo, problemas);
   verificarFicheiros(raiz, ficheiros, problemas);
   return { problemas, faixas, ficheiros: ficheiros.length };
 }
@@ -94,7 +122,7 @@ function imprimir({ problemas, faixas, ficheiros }) {
   const linhas = [...problemas];
   linhas.push(problemas.length
     ? `${problemas.length} problema(s) encontrado(s). Nada foi publicado.`
-    : `Conteúdo completo: ${faixas} faixas, ${ficheiros} ficheiros de áudio.`);
+    : `Conteúdo completo: ${faixas} ${faixas === 1 ? 'faixa' : 'faixas'}, ${ficheiros} ${ficheiros === 1 ? 'ficheiro' : 'ficheiros'} de áudio.`);
   process.stdout.write(linhas.join('\n') + '\n');
 }
 
