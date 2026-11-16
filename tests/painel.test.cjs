@@ -1,7 +1,7 @@
 // tests/painel.test.cjs
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
-const { comPagina } = require('./apoio/navegador.cjs'), { base, comoJs } = require('./apoio/conteudo.cjs'), { faixasTeste, wav } = require('./apoio/sinal.cjs');
+const { comPagina } = require('./apoio/navegador.cjs'), { base, comoJs } = require('./apoio/conteudo.cjs'), { faixasTeste, wav, onda } = require('./apoio/sinal.cjs');
 const abrir = (extra, fn) => comPagina({ conteudo: comoJs(base()), ficheiros: faixasTeste(), ...extra }, fn);
 const perto = (v, esperado, tol) => assert.ok(Math.abs(v - esperado) <= tol, `${v} ≉ ${esperado} ± ${tol}`);
 const faixa = (id) => `.faixa[data-faixa="${id}"]`, I = 'instrumentais-0', M = 'mistura-0';
@@ -149,3 +149,38 @@ test('alvos de toque: a forma de onda mede pelo menos 44 × 44 px, a 1280 e a 39
     assert.ok(r[0] >= 44 && r[1] >= 44, `${largura} px: ${r}`);
   }
 });
+
+// R1: duas faixas de duração diferente (12 s e 4 s). Tocar a segunda depois da primeira não pode herdar a duração da primeira.
+const duasFaixas = () => { const c = base(); c.categorias.instrumentais.faixas = [{ titulo: 'Longa', ficheiro: 'audio/i1.mp3' }, { titulo: 'Curta', ficheiro: 'audio/i2.mp3' }]; return c; };
+async function verificarDuracaoDaSegunda(page) {
+  const L = 'instrumentais-0', C = 'instrumentais-1';
+  await tocar(page, L, 800); await tocar(page, C, 600);
+  assert.match((await page.textContent(`${faixa(C)} .tempo`)).trim(), /\/ 0:04$/);
+  perto(Number(await page.getAttribute(`${faixa(C)} .onda`, 'aria-valuemax')), 4, 0.2);
+  const b = await page.locator(`${faixa(C)} .onda`).boundingBox(); await page.mouse.click(b.x + b.width * 0.75, b.y + b.height / 2); await page.waitForTimeout(150);
+  perto(await pos(page, C), 3, 0.4); assert.equal(await estado(page, C), 'a-tocar');
+}
+test('R1: faixa sem onda.json depois de outra mais longa mostra a sua própria duração', () => abrir({
+  conteudo: comoJs(duasFaixas()), ficheiros: { '/audio/i1.mp3': wav({ segundos: 12 }), '/audio/i1.onda.json': onda({ segundos: 12 }), '/audio/i2.mp3': wav({ segundos: 4 }) },
+}, verificarDuracaoDaSegunda));
+test('R1: o mesmo no modo simples (file://)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'site-')), raiz = path.join(__dirname, '..'), c = duasFaixas();
+  for (const f of ['index.html', 'estilo.css', 'js', 'fontes']) fs.cpSync(path.join(raiz, f), path.join(dir, f), { recursive: true });
+  c.categorias.instrumentais.faixas[0].ficheiro = 'audio/i1.wav'; c.categorias.instrumentais.faixas[1].ficheiro = 'audio/i2.wav';
+  fs.mkdirSync(path.join(dir, 'audio')); fs.writeFileSync(path.join(dir, 'audio/i1.wav'), wav({ segundos: 12 })); fs.writeFileSync(path.join(dir, 'audio/i2.wav'), wav({ segundos: 4 }));
+  fs.writeFileSync(path.join(dir, 'conteudo.js'), comoJs(c));
+  await comPagina({ ficheiro: path.join(dir, 'index.html') }, verificarDuracaoDaSegunda);
+});
+
+// R4: ao fechar o painel com o foco lá dentro, o foco vai para o botão de tocar da faixa (e não se perde no body).
+const focoEm = (page) => page.evaluate(() => { const a = document.activeElement; return a === document.body ? 'body' : `${a.closest('.faixa') && a.closest('.faixa').dataset.faixa}|${a.className}|${a.tagName}`; });
+test('R4: End na forma de onda termina a faixa e o foco passa para o botão de tocar', () => abrir({}, async (page) => {
+  await tocar(page, I, 400); await page.focus(`${faixa(I)} .onda`); await page.keyboard.press('End'); await page.waitForTimeout(800);
+  assert.equal(await page.locator('.painel').count(), 0); assert.equal(await focoEm(page), `${I}|play|BUTTON`);
+}));
+test('R4: se a faixa fica indisponível com o foco no painel, o foco vai para a linha da faixa', () => abrir({ ficheiros: { ...faixasTeste(), '/audio/i1.mp3': Buffer.from('não é áudio') } }, async (page) => {
+  await page.evaluate((f) => { document.querySelector(`${f} .play`).click(); document.querySelector(`${f} .onda`).focus(); }, faixa(I)); await page.waitForTimeout(800);   // o erro chega depois do clique
+  assert.equal(await estado(page, I), 'indisponivel');
+  assert.equal(await page.evaluate(() => document.activeElement && document.activeElement.dataset.faixa), I);
+  assert.equal(await page.getAttribute(faixa(I), 'tabindex'), '-1');
+}));

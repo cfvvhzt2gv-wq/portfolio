@@ -279,9 +279,15 @@
     function fechar(c, estado = 'parada') {
       if (ativa === c) { ativa = null; pararCiclo(); }
       c.arrasto = null;
+      const comFoco = !!c.painel && c.painel.raiz.contains(doc.activeElement);   // sem isto o foco do teclado perdia-se no body
       if (c.painel) c.painel.raiz.remove();
       c.painel = null;
       definirEstado(c, estado);
+      if (comFoco) {
+        const destino = c.play.disabled ? c.art : c.play;                         // indisponível: o botão não aceita foco, fica a linha
+        if (destino === c.art) c.art.setAttribute('tabindex', '-1');
+        destino.focus();
+      }
       escreverTexto(c.tempo, estado === 'indisponivel' ? INDISPONIVEL : c.duracao ? fmtTempo(c.duracao) : SEM_TEMPO);
     }
 
@@ -386,11 +392,14 @@
     // ---- Reprodução ----
 
     function tocarNova(c) {
-      if (ativa) fechar(ativa);                                  // volta a pôr a anterior no início e fecha o painel dela
+      if (ativa) fechar(ativa);                                  // fecha o painel da anterior (o motor só a larga em leitor.tocar)
       ativa = c;
-      abrir(c);
       definirEstado(c, 'a-tocar');
-      leitor.tocar(c.def, c.versao);                             // o fim e o erro chegam por aoFim e aoErro; false não é erro
+      // O motor tem de trocar de faixa antes de o painel novo ler a duração e a posição, senão lê as da faixa anterior.
+      // É síncrono até ao primeiro await, por isso continua dentro do gesto do utilizador; o fim e o erro chegam por aoFim e aoErro.
+      leitor.tocar(c.def, c.versao);
+      if (ativa !== c) return;                                   // falhou logo (aoErro já fechou a faixa como indisponível)
+      abrir(c);
       iniciarCiclo();
     }
     function pausar(c) {
