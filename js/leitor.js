@@ -10,6 +10,11 @@
   const DESALINHAMENTO = 0.05;                 // s: acima desta diferença de posição, a versão que entra é alinhada com a que sai
   const TENTATIVAS_INSTANTANEO = 4;            // leituras de esq, dir e esq até os dois canais serem do mesmo instante
   const FOLGA_FIM = 0.05;                      // s: procurar nunca passa de duração − FOLGA_FIM, para a faixa terminar em ordem
+  // No iPhone os dois <audio> desalinham-se mais, e um salto de posição (seek) num MP3 a tocar demora e repete um bocado de som. Por isso a
+  // versão que não se ouve é realinhada em silêncio de tempos a tempos, e a troca, a tocar, só salta acima de SALTO_A_TOCAR.
+  const SINCRONIA_MS = 500;                    // ms: de quanto em quanto tempo se realinha a versão que não se ouve
+  const SALTO_A_TOCAR = 0.25;                  // s: a tocar, a troca só alinha a versão que entra acima desta diferença
+  const AVANCO_MAXIMO = 1;                     // s: limite do avanço que compensa a demora do seek
 
   // O grafo comum a todas as faixas: cada versão chega à entrada (estéreo) por um ganho; a entrada vai para o destino e para os analisadores.
   function criarGrafo(contexto) {
@@ -28,6 +33,7 @@
     let contexto = null, grafo = null;         // só com análise; criados no primeiro tocar, dentro do gesto do utilizador
     let emCurso = null;                        // a faixa em curso, ou null: { el, ganho, nos, ativa } (elementos e ganhos por versão)
     let geracao = 0;                           // sobe em cada tocar e parar; o que pertence a uma geração antiga é ignorado
+    let relogio = 0, avanco = 0, realinhou = false;   // o intervalo do sincronizar; o avanço aprendido; se o último passo realinhou
 
     const ativo = () => (emCurso ? emCurso.el[emCurso.ativa] : null);
     const elementos = () => (emCurso ? Object.values(emCurso.el) : []);
@@ -42,6 +48,7 @@
       if (!emCurso) return;
       const { el, nos } = emCurso;
       emCurso = null;
+      clearInterval(relogio); relogio = 0;
       for (const audio of Object.values(el)) { audio.pause(); audio.removeAttribute('src'); audio.load(); }
       for (const no of nos) no.disconnect();
     }
@@ -54,6 +61,21 @@
       parar();
       if (leitor.aoErro) leitor.aoErro();
     }
+    // Realinha em silêncio a versão que não se ouve, para a troca não precisar de saltar. O seek demora (no iPhone, centenas de ms) e quem
+    // toca não espera: o alvo vai à frente pelo «avanco», que aprende com o desvio que sobra depois de cada realinhamento.
+    function sincronizar() {
+      if (!emCurso) return;
+      const sai = ativo(), outra = emCurso.el[emCurso.ativa === 'antes' ? 'depois' : 'antes'];
+      if (!outra || sai.paused || outra.paused || outra.ended || outra.seeking) return;
+      const desvio = sai.currentTime - outra.currentTime;              // > 0: a outra vai atrás
+      if (Math.abs(desvio) <= DESALINHAMENTO) { realinhou = false; return; }
+      if (realinhou) avanco = Math.min(AVANCO_MAXIMO, Math.max(0, avanco + desvio));
+      const alvo = sai.currentTime + avanco;
+      if (!(alvo < outra.duration - FOLGA_FIM)) return;               // perto do fim (ou duração desconhecida): não se mexe
+      realinhou = true;
+      outra.currentTime = alvo;
+    }
+
     function terminar() {
       parar();
       if (leitor.aoFim) leitor.aoFim();
@@ -98,6 +120,8 @@
         falhar(g);
         return false;
       }
+      realinhou = false;
+      if (faixa.urlAntes) relogio = setInterval(sincronizar, SINCRONIA_MS);
       await Promise.all(elementos().map((el) => arrancar(el, g)));
       return g === geracao && aTocar();
     }
@@ -106,6 +130,7 @@
     async function retomar() {
       if (!emCurso) return;
       const g = geracao, lista = elementos();
+      realinhou = false;
       acordar();
       await Promise.all(lista.map((el) => arrancar(el, g)));
     }
@@ -113,6 +138,7 @@
     function procurar(seg) {
       const d = duracao(), alvo = Math.max(0, d === null ? seg : Math.min(seg, d - FOLGA_FIM));
       if (Number.isFinite(alvo)) for (const el of elementos()) el.currentTime = alvo;
+      realinhou = false;                       // o desvio que vier daqui é novo, não sobra de um realinhamento
     }
 
     // Quem entra é alinhado com quem sai se andarem a mais de DESALINHAMENTO; depois os ganhos (ou o muted) passam de um para o outro.
@@ -120,7 +146,8 @@
       const nova = versao === 'antes' ? 'antes' : 'depois';
       if (!emCurso || nova === emCurso.ativa || !emCurso.el[nova]) return;
       const sai = ativo(), entra = emCurso.el[nova];
-      if (Math.abs(entra.currentTime - sai.currentTime) > DESALINHAMENTO) entra.currentTime = sai.currentTime;
+      // A tocar, o sincronizar já a mantém perto e um salto ouvia-se (no iPhone, com demora e repetição); parado, o salto não se ouve.
+      if (Math.abs(entra.currentTime - sai.currentTime) > (sai.paused ? DESALINHAMENTO : SALTO_A_TOCAR)) entra.currentTime = sai.currentTime;
       // Uma versão mais curta pode já ter acabado (o seu «ended» só conta quando está ativa): então a faixa termina em ordem, em vez de ficar
       // presa em silêncio. Se apenas ficou parada (voltou-se atrás depois de acabar) e quem sai toca, arranca-se para a troca se ouvir.
       // O fim vem primeiro: um play() num elemento que acabou recomeçaria do 0. Depois do seek do alinhamento o «ended» pode ler false com a
