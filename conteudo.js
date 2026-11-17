@@ -23,71 +23,48 @@
 */
 window.CONTEUDO = {
   nome: "Afonso Duarte",
-  local: "[Cidade, País]",
+  local: "Lisboa, Portugal",
   contacto: {
-    email: "[endereco@exemplo.pt]",
+    email: "afonsodu03@gmail.com",
     redes: [
-      { nome: "[Instagram]", url: "[https://...]" },
-      { nome: "[SoundCloud]", url: "[https://...]" },
-      { nome: "[YouTube]", url: "[https://...]" },
+      { nome: "Instagram", url: "https://www.instagram.com/afonso_ro_duarte/" },
     ],
   },
   sobre: {
-    daws: ["[DAW principal]", "[Outra DAW]"],
-    formacao: [
-      {
-        titulo: "Orquestra do Colégio Militar",
-        periodo: "2013–2021",
-      },
-    ],
-    tecnicas: ["[Técnica]", "[Técnica]", "[Técnica]"],
+    daws: ["Pro Tools", "FL Studio", "REAPER"],
   },
   categorias: {
     instrumentais: {
-      descricao: "[Uma frase sobre os teus instrumentais.]",
       faixas: [
-        {
-          titulo: "Carpe Diem", ficheiro: "audio/instrumentais/carpe diem.mp3",
-          genero: "[Género]",
-          ano: "[Ano]",
-        },
-        {
-          titulo: "Grau", ficheiro: "audio/instrumentais/grau.mp3",
-          genero: "[Género]",
-          ano: "[Ano]",
-        },
-        {
-          titulo: "MDV", ficheiro: "audio/instrumentais/mdv.mp3",
-          genero: "[Género]",
-          ano: "[Ano]",
-        },
-        {
-          titulo: "Xkzito", ficheiro: "audio/instrumentais/xkzito.mp3",
-          genero: "[Género]",
-          ano: "[Ano]",
-        },
+        { titulo: "Carpe Diem", ficheiro: "audio/instrumentais/carpe diem.mp3" },
+        { titulo: "Grau", ficheiro: "audio/instrumentais/grau.mp3" },
+        { titulo: "MDV", ficheiro: "audio/instrumentais/mdv.mp3" },
+        { titulo: "Xkzito", ficheiro: "audio/instrumentais/xkzito.mp3" },
       ],
     },
     mistura: {
-      descricao: "[Ouve cada trabalho antes e depois da mistura.]",
+      descricao: "Projetos feitos no âmbito do curso Técnico de Som na 35mm",
       faixas: [
         {
-          titulo: "[Faixa]",
-          antes: "[audio/mistura/faixa-antes.mp3]", depois: "[audio/mistura/faixa-depois.mp3]",
-          artista: "[Artista]",
-          servico: "[Mistura e master]",
-          ano: "[Ano]",
+          titulo: "(Mix e Master) Canção Teste",
+          antes: "audio/mistura/antes-mistura-e-masterizacao-cancaoteste.mp3",
+          depois: "audio/mistura/mistura-e-marsterizacao-cancao-teste.mp3",
+        },
+        {
+          titulo: "(Mix e Master) Kat Wright - By My Side",
+          antes: "audio/mistura/antes-mistura-e-masterizacao-bymyside.mp3",
+          depois: "audio/mistura/mistura-e-masterizacao-by-my-side.mp3",
+        },
+        {
+          titulo: "(Mix) Hurray For The Riff Raff - Living In The City",
+          antes: "audio/mistura/antes-mistura-livinginthecity.mp3",
+          depois: "audio/mistura/mistura-living-in-the-city.mp3",
         },
       ],
     },
     cinematografico: {
-      descricao: "[Uma frase sobre o teu áudio cinematográfico.]",
       faixas: [
-        {
-          titulo: "[Título do projeto]", ficheiro: "[audio/cinematografico/ficheiro.mp3]",
-          tipo: "[Tipo de projeto]",
-          ano: "[Ano]",
-        },
+        { titulo: "Mixed Feelings", ficheiro: "audio/cinematografico/mixed-feelings.mp3" },
       ],
     },
   },
