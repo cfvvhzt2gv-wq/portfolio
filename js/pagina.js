@@ -163,8 +163,7 @@
     if (!categorias.length) { indice.remove(); return; }
     encher(indice, ...categorias.map((c) => no(doc, 'a', { classe: 'item-indice', href: `#${c.id}` },
       no(doc, 'span', { classe: 'num', texto: c.numero }),
-      no(doc, 'span', { classe: 'nome', texto: c.nome }),
-      no(doc, 'span', { classe: 'contador', texto: c.contador }))));
+      no(doc, 'span', { classe: 'nome', texto: c.nome }))));
   }
 
   function montarContacto(doc, m) {
