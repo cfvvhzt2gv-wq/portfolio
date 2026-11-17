@@ -10,11 +10,15 @@
   const DESALINHAMENTO = 0.05;                 // s: acima desta diferença de posição, a versão que entra é alinhada com a que sai
   const TENTATIVAS_INSTANTANEO = 4;            // leituras de esq, dir e esq até os dois canais serem do mesmo instante
   const FOLGA_FIM = 0.05;                      // s: procurar nunca passa de duração − FOLGA_FIM, para a faixa terminar em ordem
-  // No iPhone os dois <audio> desalinham-se mais, e um salto de posição (seek) num MP3 a tocar demora e repete um bocado de som. Por isso a
-  // versão que não se ouve é realinhada em silêncio de tempos a tempos, e a troca, a tocar, só salta acima de SALTO_A_TOCAR.
-  const SINCRONIA_MS = 500;                    // ms: de quanto em quanto tempo se realinha a versão que não se ouve
+  // No iPhone os dois <audio> arrancam desfasados, e um salto de posição (seek) num MP3 a tocar pára-o uns 0,3 s: saltar nunca os alinha.
+  // Por isso a versão que não se ouve apanha a outra mudando um pouco a velocidade (playbackRate), sem saltos; a troca, a tocar, só salta
+  // acima de SALTO_A_TOCAR.
+  const SINCRONIA_MS = 250;                    // ms: de quanto em quanto tempo se acerta a velocidade da versão que não se ouve
+  const TOLERANCIA = 0.02;                     // s: abaixo desta diferença a versão que não se ouve volta à velocidade normal
+  const GANHO_SINCRONIA = 1;                   // velocidade a mais (ou a menos) por segundo de diferença
+  const CORRECAO_MAXIMA = 0.15;                // limite da velocidade a mais ou a menos (15 %)
+  const SALTO_SINCRONIA = 1;                   // s: acima disto a versão que não se ouve salta (em silêncio) em vez de apanhar
   const SALTO_A_TOCAR = 0.25;                  // s: a tocar, a troca só alinha a versão que entra acima desta diferença
-  const AVANCO_MAXIMO = 1;                     // s: limite do avanço que compensa a demora do seek
 
   // O grafo comum a todas as faixas: cada versão chega à entrada (estéreo) por um ganho; a entrada vai para o destino e para os analisadores.
   function criarGrafo(contexto) {
@@ -33,7 +37,7 @@
     let contexto = null, grafo = null;         // só com análise; criados no primeiro tocar, dentro do gesto do utilizador
     let emCurso = null;                        // a faixa em curso, ou null: { el, ganho, nos, ativa } (elementos e ganhos por versão)
     let geracao = 0;                           // sobe em cada tocar e parar; o que pertence a uma geração antiga é ignorado
-    let relogio = 0, avanco = 0, realinhou = false;   // o intervalo do sincronizar; o avanço aprendido; se o último passo realinhou
+    let relogio = 0;                           // o intervalo do sincronizar
 
     const ativo = () => (emCurso ? emCurso.el[emCurso.ativa] : null);
     const elementos = () => (emCurso ? Object.values(emCurso.el) : []);
@@ -61,19 +65,22 @@
       parar();
       if (leitor.aoErro) leitor.aoErro();
     }
-    // Realinha em silêncio a versão que não se ouve, para a troca não precisar de saltar. O seek demora (no iPhone, centenas de ms) e quem
-    // toca não espera: o alvo vai à frente pelo «avanco», que aprende com o desvio que sobra depois de cada realinhamento.
+    // Mantém a versão que não se ouve ao lado da que se ouve, para a troca não precisar de saltar: acelera-a (ou trava-a) em proporção da
+    // diferença, até ficar abaixo de TOLERANCIA. Só uma diferença enorme (acima de SALTO_SINCRONIA) se corrige com um salto, em silêncio.
+    // Com alguma das duas a carregar (readyState < 3) ou a saltar, as posições não querem dizer nada: espera-se.
     function sincronizar() {
       if (!emCurso) return;
       const sai = ativo(), outra = emCurso.el[emCurso.ativa === 'antes' ? 'depois' : 'antes'];
-      if (!outra || sai.paused || outra.paused || outra.ended || outra.seeking) return;
+      if (!outra || sai.paused || outra.paused || outra.ended || sai.seeking || outra.seeking) return;
+      if (sai.readyState < 3 || outra.readyState < 3) return;
       const desvio = sai.currentTime - outra.currentTime;              // > 0: a outra vai atrás
-      if (Math.abs(desvio) <= DESALINHAMENTO) { realinhou = false; return; }
-      if (realinhou) avanco = Math.min(AVANCO_MAXIMO, Math.max(0, avanco + desvio));
-      const alvo = sai.currentTime + avanco;
-      if (!(alvo < outra.duration - FOLGA_FIM)) return;               // perto do fim (ou duração desconhecida): não se mexe
-      realinhou = true;
-      outra.currentTime = alvo;
+      if (Math.abs(desvio) > SALTO_SINCRONIA) {
+        outra.playbackRate = 1;
+        if (sai.currentTime < outra.duration - FOLGA_FIM) outra.currentTime = sai.currentTime;
+        return;
+      }
+      const correcao = Math.abs(desvio) <= TOLERANCIA ? 0 : Math.max(-CORRECAO_MAXIMA, Math.min(CORRECAO_MAXIMA, desvio * GANHO_SINCRONIA));
+      outra.playbackRate = 1 + correcao;
     }
 
     function terminar() {
@@ -120,7 +127,6 @@
         falhar(g);
         return false;
       }
-      realinhou = false;
       if (faixa.urlAntes) relogio = setInterval(sincronizar, SINCRONIA_MS);
       await Promise.all(elementos().map((el) => arrancar(el, g)));
       return g === geracao && aTocar();
@@ -130,7 +136,6 @@
     async function retomar() {
       if (!emCurso) return;
       const g = geracao, lista = elementos();
-      realinhou = false;
       acordar();
       await Promise.all(lista.map((el) => arrancar(el, g)));
     }
@@ -138,7 +143,6 @@
     function procurar(seg) {
       const d = duracao(), alvo = Math.max(0, d === null ? seg : Math.min(seg, d - FOLGA_FIM));
       if (Number.isFinite(alvo)) for (const el of elementos()) el.currentTime = alvo;
-      realinhou = false;                       // o desvio que vier daqui é novo, não sobra de um realinhamento
     }
 
     // Quem entra é alinhado com quem sai se andarem a mais de DESALINHAMENTO; depois os ganhos (ou o muted) passam de um para o outro.
@@ -154,6 +158,7 @@
       // posição já no fim (Chromium, num elemento que acabou a tocar), por isso a posição também conta.
       if (entra.ended || entra.currentTime >= entra.duration) { terminar(); return; }
       if (!sai.paused && entra.paused) arrancar(entra, geracao);
+      entra.playbackRate = 1;                  // quem passa a ouvir-se toca à velocidade certa; quem sai é acertado pelo sincronizar
       if (analise) {
         const t = contexto.currentTime;
         for (const [v, alvo] of [[emCurso.ativa, 0], [nova, 1]]) {
