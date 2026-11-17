@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico Antes/Depois</title>
+<style>
+  body { font: 15px -apple-system, system-ui, sans-serif; margin: 16px; }
+  button { font-size: 18px; padding: 12px 16px; margin: 4px 4px 4px 0; }
+  table { border-collapse: collapse; margin: 12px 0; font: 14px ui-monospace, monospace; }
+  td, th { border: 1px solid #999; padding: 4px 8px; text-align: right; }
+  #registo { font: 12px ui-monospace, monospace; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<p><b>Diagnóstico Antes/Depois</b> — página temporária.</p>
+<p>Modo: <b id="modo"></b></p>
+<button id="tocar">Tocar</button><button id="antes">Antes</button><button id="depois">Depois</button><button id="pausa">Pausa</button>
+<table>
+  <tr><th></th><th>depois</th><th>antes</th></tr>
+  <tr><th>tempo</th><td id="t0"></td><td id="t1"></td></tr>
+  <tr><th>parado</th><td id="p0"></td><td id="p1"></td></tr>
+  <tr><th>a saltar</th><td id="s0"></td><td id="s1"></td></tr>
+  <tr><th>pronto</th><td id="r0"></td><td id="r1"></td></tr>
+</table>
+<p>Desvio (depois − antes): <b id="desvio"></b> s · a ouvir: <b id="versao"></b></p>
+<div id="registo"></div>
+<script src="leitor.js"></script>
+<script>
+  const base = '../audio/mistura/';
+  const faixa = { url: base + 'mistura-e-masterizacao-by-my-side.mp3', urlAntes: base + 'antes-mistura-e-masterizacao-bymyside.mp3' };
+  const nav = navigator;
+  const ios = /iP(hone|ad|od)/.test(nav.userAgent) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1);
+  const completo = typeof AudioContext === 'function' && !(ios && !('audioSession' in nav));
+  document.getElementById('modo').textContent = (completo ? 'completo' : 'simples') + ' · ' + nav.userAgent;
+  const inicio = performance.now(), linhas = [];
+  const registar = (texto) => {
+    linhas.unshift(((performance.now() - inicio) / 1000).toFixed(2) + ' ' + texto);
+    document.getElementById('registo').textContent = linhas.slice(0, 40).join('\n');
+  };
+  const criados = [], Original = window.Audio;
+  window.Audio = function (url) {
+    const a = new Original(url), nome = criados.length === 0 ? 'depois' : 'antes';
+    for (const ev of ['play', 'playing', 'pause', 'seeking', 'seeked', 'waiting', 'stalled', 'ended', 'error']) {
+      a.addEventListener(ev, () => registar(nome + ' ' + ev + ' @' + a.currentTime.toFixed(2)));
+    }
+    criados.push(a);
+    return a;
+  };
+  const l = Portfolio.Leitor.criar({ analise: completo });
+  const fmt = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
+  setInterval(() => {
+    criados.forEach((a, i) => {
+      document.getElementById('t' + i).textContent = fmt(a.currentTime);
+      document.getElementById('p' + i).textContent = a.paused ? 'sim' : 'não';
+      document.getElementById('s' + i).textContent = a.seeking ? 'sim' : 'não';
+      document.getElementById('r' + i).textContent = a.readyState;
+    });
+    if (criados.length === 2) document.getElementById('desvio').textContent = (criados[0].currentTime - criados[1].currentTime).toFixed(3);
+    document.getElementById('versao').textContent = l.versao();
+  }, 100);
+  document.getElementById('tocar').onclick = () => { criados.length = 0; registar('— tocar'); l.tocar(faixa); };
+  document.getElementById('antes').onclick = () => { registar('— clique Antes'); l.trocarVersao('antes'); };
+  document.getElementById('depois').onclick = () => { registar('— clique Depois'); l.trocarVersao('depois'); };
+  document.getElementById('pausa').onclick = () => { registar('— pausa'); l.pausar(); };
+</script>
+</body>
+</html>
