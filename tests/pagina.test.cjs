@@ -124,10 +124,14 @@ test('R5: apagar a linha de um campo opcional do conteudo.js real nunca faz desa
   const linhas = fs.readFileSync(path.join(__dirname, '..', 'conteudo.js'), 'utf8').split('\n');
   const faixas = (codigo) => { const janela = {}; vm.runInNewContext(codigo, { window: janela }); return P.preparar(janela.CONTEUDO).categorias.map((c) => c.faixas.length); };
   const todas = faixas(linhas.join('\n'));
-  assert.deepEqual(todas, [1, 1, 1]);
+  // O conteudo.js real vai sendo preenchido pelo Afonso: só se exige que mostre faixas, não quantas.
+  assert.ok(todas.length > 0 && todas.every((n) => n > 0), `o conteudo.js real devia mostrar faixas: ${JSON.stringify(todas)}`);
   // Linhas que só têm um campo opcional (e o seu valor, sem mais nada).
   const opcional = /^\s*(local|email|descricao|genero|ano|artista|servico|tipo|periodo): .*,\s*$/;
   const alvos = linhas.map((l, i) => [l, i]).filter(([l]) => opcional.test(l));
-  assert.ok(alvos.length >= 12, `só ${alvos.length} linhas de campos opcionais encontradas`);
+  assert.ok(alvos.length > 0, 'nenhuma linha de campo opcional encontrada: o formato do conteudo.js mudou?');
+  // A causa do problema R5: um campo opcional na mesma linha do título ou de um ficheiro.
+  const obrigatorio = /\b(titulo|ficheiro|antes|depois):/, qualquerOpcional = /\b(local|email|descricao|genero|ano|artista|servico|tipo|periodo):/;
+  assert.deepEqual(linhas.filter((l) => obrigatorio.test(l) && qualquerOpcional.test(l)).map((l) => l.trim()), [], 'campo opcional na mesma linha do título ou de um ficheiro');
   for (const [l, i] of alvos) assert.deepEqual(faixas(linhas.filter((_, j) => j !== i).join('\n')), todas, `ao apagar «${l.trim()}» (linha ${i + 1}) desaparece uma faixa`);
 });
