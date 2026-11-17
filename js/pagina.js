@@ -153,9 +153,8 @@
   }
 
   function montarTopo(doc, m) {
-    const frase = 'Instrumentais, mistura e masterização, áudio cinematográfico';
     encher(doc.querySelector('.topo-rodape'),
-      no(doc, 'p', { classe: 'apresentacao', texto: m.nome ? `${frase} — por ${m.nome}.` : `${frase}.` }),
+      m.nome && no(doc, 'p', { classe: 'apresentacao', texto: `por ${m.nome}` }),
       m.local && no(doc, 'p', { classe: 'local', texto: m.local }));
   }
 
