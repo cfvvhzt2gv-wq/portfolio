@@ -47,7 +47,22 @@ window.CONTEUDO = {
       descricao: "[Uma frase sobre os teus instrumentais.]",
       faixas: [
         {
-          titulo: "[Nome da faixa]", ficheiro: "[audio/instrumentais/ficheiro.mp3]",
+          titulo: "Carpe Diem", ficheiro: "audio/instrumentais/carpe diem.mp3",
+          genero: "[Género]",
+          ano: "[Ano]",
+        },
+        {
+          titulo: "Grau", ficheiro: "audio/instrumentais/grau.mp3",
+          genero: "[Género]",
+          ano: "[Ano]",
+        },
+        {
+          titulo: "MDV", ficheiro: "audio/instrumentais/mdv.mp3",
+          genero: "[Género]",
+          ano: "[Ano]",
+        },
+        {
+          titulo: "Xkzito", ficheiro: "audio/instrumentais/xkzito.mp3",
           genero: "[Género]",
           ano: "[Ano]",
         },
